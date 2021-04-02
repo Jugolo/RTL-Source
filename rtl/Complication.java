@@ -21,6 +21,10 @@ public class Complication {
 		return new Complication(ComplicationType.BREAK, null);
 	}
 
+	public static Complication _continue(){
+		return new Complication(ComplicationType.CONTINUE, null);
+	}
+
 	private ComplicationType type;
 	private Object value;
 
@@ -43,5 +47,9 @@ public class Complication {
 
 	public boolean isBreak(){
 		return this.type == ComplicationType.BREAK;
+	}
+
+	public boolean isContinue(){
+		return this.type == ComplicationType.CONTINUE;
 	}
 }

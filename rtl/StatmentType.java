@@ -14,5 +14,6 @@ public enum StatmentType {
 	GLOBAL,
 	FOR,
 	ELSE,
-	BREAK
+	BREAK,
+	CONTINUE
 }

@@ -1,9 +1,13 @@
 package rtl;
 
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.io.IOException;
 import java.io.File;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Random;
 
 import rtl.exception.RTLRuntimeException;
 import rtl.exception.RTLInterprenterException;
@@ -12,6 +16,8 @@ import rtl.local.TcpSocketClient;
 import rtl.local.LocalFile;
 
 public class LocalPath {
+	private static Random rand = new Random();
+	
 	public static void eval(String name, VariabelDatabase db, String root) throws RTLRuntimeException{
 		switch(name){
 			case "rtl.math.rand":
@@ -28,6 +34,9 @@ public class LocalPath {
 		    break;
 		    case "rtl.io.file":
 				iofile(db, root);
+		    break;
+		    case "rtl.io.dir":
+		        iodir(db, root);
 		    break;
 		    case "rtl.system.thread":
 		    	thread(db, root);
@@ -51,6 +60,22 @@ public class LocalPath {
 		ref.put(new Function("count", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return TypeConveter.array(arg[0]).size();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+		ref = db.get("in_array");
+		arg = new CallableArgs();
+		arg.add("array");
+		arg.add("find");
+		ref.put(new Function("in_array", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				Array array = TypeConveter.array(arg[0]);
+				for(int i=0;i<array.size();i++){
+					if(array.get(i).equals(arg[1]))
+						return true;
+				}
+				return false;
 			}
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -97,10 +122,14 @@ public class LocalPath {
 				String str = TypeConveter.string(arg[0]);
 				int start = TypeConveter.toInt(arg[1]);
 				int length = TypeConveter.toInt(arg[2]);
-				if(length == 0){
-					return str.substring(start);
+				try{
+					if(length == 0){
+						return str.substring(start);
+					}
+					return str.substring(start, length);
+				}catch(IndexOutOfBoundsException e){
+					return "";
 				}
-				return str.substring(start, length);
 			}
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -219,6 +248,18 @@ public class LocalPath {
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
+    	ref = db.get("file_setExecutable");
+    	ref.put(new Function("file_setExecutable", db, arg, new ICallable(){
+    		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+    			if(!(arg[0] instanceof LocalFile)){
+    				throw new RTLRuntimeException("file_path exceptct the first argument to be file stream");
+    			}
+
+    			return ((LocalFile)arg[0]).setExecutable();
+    		}
+    	}));
+    	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
     	ref = db.get("file_size");
     	arg = new CallableArgs();
     	arg.add("file");
@@ -295,9 +336,66 @@ public class LocalPath {
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
+	private static void iodir(VariabelDatabase db, String root) throws RTLRuntimeException{
+		VariableReference ref = db.get("dir");
+		CallableArgs arg = new CallableArgs();
+		arg.add("path");
+		ref.put(new Function("dir", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return new File(TypeConveter.string(arg[0]));
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+		ref = db.get("dir_exists");
+		arg = new CallableArgs();
+		arg.add("dir");
+		ref.put(new Function("dir_exists", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!(arg[0] instanceof File)){
+					throw new RTLRuntimeException("dir_exists expect argument 1 to be a part of dir stream");
+				}
+
+				File f = (File)arg[0];
+				return f.exists() && f.isDirectory();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+		ref = db.get("dir_create");
+		ref.put(new Function("dir_create", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!(arg[0] instanceof File)){
+					throw new RTLRuntimeException("dir_exists expect argument 1 to be a part of dir stream");
+				}
+
+				File f = (File)arg[0];
+				if(f.exists() && f.isDirectory())
+					return false;
+				return f.mkdir();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
+
     private static void iotcp(VariabelDatabase db) throws RTLRuntimeException{
-    	VariableReference ref = db.get("tcp_readln");
+    	VariableReference ref = db.get("tcp");
     	CallableArgs arg = new CallableArgs();
+    	arg.add("server");
+    	arg.add("port");
+    	ref.put(new Function("tcp", db, arg, new ICallable(){
+    		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+    			try{
+    				return new TcpSocketClient(new Socket(TypeConveter.string(arg[0]), TypeConveter.toInt(arg[1])));
+    			}catch(IOException e){
+    				throw new RTLRuntimeException(e.getMessage());
+    			}
+    		}
+    	}));
+    	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+    	
+    	ref = db.get("tcp_readln");
+    	arg = new CallableArgs();
     	arg.add("tcp");
     	ref.put(new Function("tcp_readln", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
@@ -340,8 +438,7 @@ public class LocalPath {
     			if(!(arg[0] instanceof TcpSocketClient)){
     				throw new RTLRuntimeException("tcp_ip first argument needed to be tcp socket stream");
     			}
-    			((TcpSocketClient)arg[0]).flush();
-    			return null;
+    			return ((TcpSocketClient)arg[0]).flush();
     		}
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -353,8 +450,7 @@ public class LocalPath {
     				throw new RTLRuntimeException("tcp_close first argument needed to be tcp socket stream");
     			}
 
-    			((TcpSocketClient)arg[0]).close();
-    			return null;
+    			return ((TcpSocketClient)arg[0]).close();
     		}
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -384,8 +480,7 @@ public class LocalPath {
     				throw new RTLRuntimeException("tcp_writeln first argument needed to be tcp socket stream");
     			}
 
-    			((TcpSocketClient)arg[0]).writeln(TypeConveter.string(arg[1]));
-    			return null;
+    			return ((TcpSocketClient)arg[0]).writeln(TypeConveter.string(arg[1]));
     		}
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -397,8 +492,7 @@ public class LocalPath {
     				throw new RTLRuntimeException("tcp_write first argument needed to be tcp socket stream");
     			}
 
-    			((TcpSocketClient)arg[0]).write(TypeConveter.string(arg[1]));
-    			return null;
+    			return ((TcpSocketClient)arg[0]).write(TypeConveter.string(arg[1]));
     		}
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -414,8 +508,20 @@ public class LocalPath {
     				throw new RTLRuntimeException("tcp_writeBytes need second argument to be byte array");
     			}
 
-    			((TcpSocketClient)arg[0]).writeBytes((byte[])arg[1]);
-    			return null;
+    			return ((TcpSocketClient)arg[0]).writeBytes((byte[])arg[1]);
+    		}
+    	}));
+    	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+    	ref = db.get("tcp_lastError");
+    	arg = new CallableArgs();
+    	arg.add("tcpstream");
+    	ref.put(new Function("tcp_lastError", db, arg, new ICallable(){
+    		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+    			if(!(arg[0] instanceof TcpSocketClient)){
+    				return "<unknowntcpstream>";
+    			}
+    			return ((TcpSocketClient)arg[0]).errmsg;
     		}
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
@@ -481,7 +587,9 @@ public class LocalPath {
 		VariableReference ref = db.get("rand");
 		ref.put(new Function("rand", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
-				return (int)(Math.random() * TypeConveter.toInt(arg[1]) + TypeConveter.toInt(arg[0]));
+				int min = TypeConveter.toInt(arg[0]);
+				int max = TypeConveter.toInt(arg[1]);
+				return rand.nextInt((max - min) + 1) + min;
 			}
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE);
@@ -519,10 +627,54 @@ public class LocalPath {
 				((IReference)time.get("second")).put(c.get(Calendar.SECOND));
 				((IReference)time.get("minuts")).put(c.get(Calendar.MINUTE));
 				((IReference)time.get("month")).put(c.get(Calendar.MONTH));
-				((IReference)time.get("now")).put((int)c.getTime().getTime());
+				((IReference)time.get("now")).put(c.getTime().getTime());
 				return time;
 			}
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+		ref = db.get("utcstring");
+		CallableArgs arg = new CallableArgs();
+		arg.add("time");
+		ref.put(new Function("utcstring", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				Calendar c = Calendar.getInstance();
+				long l = arg[0] instanceof Long ? (long)arg[0] : 0;
+				c.setTime(new Date(l));
+				String[] DayName = new String[]{
+					"Sun",
+					"Mon",
+					"Tue",
+					"Wed",
+					"Thu",
+					"Fri",
+					"Sat"
+				};
+
+				String[] MonthName = new String[]{
+					"Jan",
+					"Feb",
+					"Mar",
+					"Apr",
+					"May",
+					"Jun",
+					"Jul",
+					"Aug",
+					"Sep",
+					"Oct",
+					"Nov",
+					"Dec"
+				};
+
+				return DayName[c.get(Calendar.DAY_OF_WEEK)-1]+", "+twoDigit(c.get(Calendar.DATE))+" "+
+				MonthName[c.get(Calendar.MONTH)]+" "+c.get(Calendar.YEAR)+" "+twoDigit(c.get(Calendar.HOUR_OF_DAY))+":"+
+				twoDigit(c.get(Calendar.MINUTE))+":"+twoDigit(c.get(Calendar.SECOND))+" GMT";
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
+
+	private static String twoDigit(int n){
+		return n < 10 ? "0"+n : n+"";
 	}
 }

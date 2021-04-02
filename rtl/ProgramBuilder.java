@@ -45,9 +45,18 @@ public class ProgramBuilder {
 					return _for(token);
 				case "break":
 					return _break(token);
+				case "continue":
+					return _continue(token);
 			}
 		}
 		return getExpresion(token);
+	}
+
+	private static Statment _continue(Tokenizer token) throws RTLInterprenterException{
+		Statment statment = new Statment(StatmentType.CONTINUE, token.current().file(), token.current().line());
+		token.next().expect(TokenType.PUNCTOR, ";");
+		token.next();
+		return statment;
 	}
 
 	private static Statment _break(Tokenizer token) throws RTLInterprenterException{
@@ -196,8 +205,8 @@ public class ProgramBuilder {
 	}
 
 	private static Statment print(Tokenizer token) throws RTLInterprenterException{
-		token.next();
 		Statment statment = new Statment(StatmentType.PRINT, token.current().file(), token.current().line());
+		token.next();
 		statment.expresion = ExpresionBuilder.build(token);
 		token.current().expect(TokenType.PUNCTOR, ";");
 		token.next();
@@ -206,8 +215,8 @@ public class ProgramBuilder {
 
     //println <expresion>;
 	private static Statment println(Tokenizer token) throws RTLInterprenterException{
-		token.next();
 		Statment statment = new Statment(StatmentType.PRINTLN, token.current().file(), token.current().line());
+		token.next();
 		statment.expresion = ExpresionBuilder.build(token);
 		token.current().expect(TokenType.PUNCTOR, ";");
 		token.next();

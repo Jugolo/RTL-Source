@@ -189,7 +189,7 @@ public class ExpresionBuilder {
 			token.next();
 			exp.left = before;
 			exp.list = getArgsCall(token);
-			return exp;
+			return handleAfterIdentify(exp, token);
 		}
 
 		if(token.current().is(TokenType.PUNCTOR, ".")){

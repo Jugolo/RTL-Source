@@ -16,6 +16,8 @@ public class TypeConveter {
 			return "number";
 		if(obj instanceof Double)
 			return "number";
+		if(obj instanceof Long)
+			return "number";
 		if(obj instanceof Struct)
 			return "struct";
 		if(obj instanceof StructValue)
@@ -27,7 +29,7 @@ public class TypeConveter {
 	}
 
 	public static boolean isNumber(Object obj){
-		return obj instanceof Integer;
+		return obj instanceof Integer || obj instanceof Double || obj instanceof Long;
 	}
 
 	public static Array array(Object obj) throws RTLRuntimeException{
@@ -53,7 +55,32 @@ public class TypeConveter {
 			return (int)obj;
 		if(obj instanceof Double)
 			return (int)((double)obj);
+		if(obj instanceof Long)
+			return (int)((long)obj);
+			
 		throw new RTLRuntimeException("Cant convert "+type(obj)+" to int");
+	}
+
+	public static double toDouble(Object obj) throws RTLRuntimeException{
+		if(obj instanceof Integer)
+			return (double)((int)obj);
+		if(obj instanceof Double)
+			return (double)obj;
+		if(obj instanceof Long)
+			return (double)((long)obj);
+			
+		throw new RTLRuntimeException("Cant convert "+type(obj)+" to double");
+	}
+
+	public static long toLong(Object obj) throws RTLRuntimeException{
+		if(obj instanceof Integer)
+			return (long)((int)obj);
+		if(obj instanceof Double)
+			return (long)((double)obj);
+		if(obj instanceof Long)
+			return (long)obj;
+			
+		throw new RTLRuntimeException("Cant convert "+type(obj)+" to long");
 	}
 
 	public static boolean bool(Object obj) throws RTLRuntimeException{

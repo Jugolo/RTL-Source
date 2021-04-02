@@ -13,6 +13,7 @@ public class TcpSocketClient {
 	private Socket socket;
 	private BufferedReader reader;
 	private OutputStream writer;
+	public String errmsg = "<noerror>";
 
 	public TcpSocketClient(Socket socket) throws RTLRuntimeException{
 		this.socket = socket;
@@ -28,7 +29,8 @@ public class TcpSocketClient {
 		try{
 			return this.reader.readLine();
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return null;
 		}
 	}
 
@@ -37,7 +39,8 @@ public class TcpSocketClient {
 			int c = this.reader.read();
 		  	return c == -1 ? null : ((char)c)+"";
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return null;
 		}
 	}
 
@@ -46,36 +49,43 @@ public class TcpSocketClient {
 		try{
 			this.reader.read(buffer, 0, length);
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return null;
 		}
 		return new String(buffer);
 	}
 
-	public void writeln(String message) throws RTLRuntimeException{
-		this.write(message+"\r\n");
+	public boolean writeln(String message) throws RTLRuntimeException{
+		return this.write(message+"\r\n");
 	}
 
-	public void write(String message) throws RTLRuntimeException{
+	public boolean write(String message) throws RTLRuntimeException{
 		try{
 			this.writer.write(message.getBytes());
+			return true;
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return false;
 		}
 	}
 
-	public void writeBytes(byte[] buffer) throws RTLRuntimeException{
+	public boolean writeBytes(byte[] buffer) throws RTLRuntimeException{
 		try{
 			this.writer.write(buffer, 0, buffer.length);
+			return true;
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return false;
 		}
 	}
 
-	public void flush() throws RTLRuntimeException{
+	public boolean flush() throws RTLRuntimeException{
 		try{
 			this.writer.flush();
+			return true;
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return false;
 		}
 	}
 
@@ -83,13 +93,15 @@ public class TcpSocketClient {
 		return this.socket.getInetAddress().getHostAddress();
 	}
 
-	public void close() throws RTLRuntimeException{
+	public boolean close() throws RTLRuntimeException{
 		try{
 			this.writer.close();
 			this.reader.close();
 			this.socket.close();
+			return true;
 		}catch(IOException e){
-			throw new RTLRuntimeException(e.getMessage());
+			this.errmsg = e.getMessage();
+			return false;
 		}
 	}
 }

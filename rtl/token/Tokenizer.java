@@ -7,6 +7,7 @@ import java.io.FileReader;
 public class Tokenizer {
 	private TokenReader reader;
 	private TokenBuffer buffer;
+	private TokenPos pos;
 
 	private String[] keywords = {
 		"println",
@@ -26,7 +27,8 @@ public class Tokenizer {
 		"true",
 		"false",
 		"null",
-		"global"
+		"global",
+		"continue"
 		};
 	
 	public Tokenizer(FileReader reader, String path) throws RTLInterprenterException{
@@ -46,7 +48,7 @@ public class Tokenizer {
 		int c = this.gc();
 
 		if(c == -1){
-			return new TokenBuffer(TokenType.EOS, "End of script", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.EOS, "End of script");
 		}
 
 		if(this.isIdentifyStart(c)){
@@ -71,7 +73,7 @@ public class Tokenizer {
 			getCleanNumber(builder);
 		}
 
-		return new TokenBuffer(TokenType.NUMBER, builder.toString(), this.reader.getPath(), this.reader.getLine());
+		return this.buffer(TokenType.NUMBER, builder.toString());
 	}
 
 	private void getCleanNumber(StringBuilder buffer) throws RTLInterprenterException{
@@ -111,7 +113,7 @@ public class Tokenizer {
         		str.append((char)buffer);
         }
 
-		return new TokenBuffer(TokenType.STRING, str.toString(), this.reader.getPath(), line);
+		return this.buffer(TokenType.STRING, str.toString());
 	}
 
 	private TokenBuffer getIdentify(int c) throws RTLInterprenterException{
@@ -122,96 +124,96 @@ public class Tokenizer {
 		}
 
         if(exists(buffer.toString(), keywords))
-        	return new TokenBuffer(TokenType.KEYWORD, buffer.toString(), this.reader.getPath(), this.reader.getLine());
+        	return this.buffer(TokenType.KEYWORD, buffer.toString());
 		
 		//System.out.println(buffer.toString());
-		return new TokenBuffer(TokenType.IDENTIFY, buffer.toString(), this.reader.getPath(), this.reader.getLine());
+		return this.buffer(TokenType.IDENTIFY, buffer.toString());
 	}
 
 	private TokenBuffer getPunctor(int c) throws RTLInterprenterException{
 		if(c == ';')
-			return new TokenBuffer(TokenType.PUNCTOR, ";", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ";");
 		if(c == ':')
-			return new TokenBuffer(TokenType.PUNCTOR, ":", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ":");
 		if(c == '(')
-			return new TokenBuffer(TokenType.PUNCTOR, "(", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "(");
 		if(c == ')')
-			return new TokenBuffer(TokenType.PUNCTOR, ")", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ")");
 		if(c == '{')
-			return new TokenBuffer(TokenType.PUNCTOR, "{", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "{");
 		if(c == '}')
-			return new TokenBuffer(TokenType.PUNCTOR, "}", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "}");
 		if(c == '[')
-			return new TokenBuffer(TokenType.PUNCTOR, "[", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "[");
 		if(c == ']')
-			return new TokenBuffer(TokenType.PUNCTOR, "]", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "]");
 		if(c == ',')
-			return new TokenBuffer(TokenType.PUNCTOR, ",", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ",");
 		if(c == '.')
-			return new TokenBuffer(TokenType.PUNCTOR, ".", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ".");
 		if(c == '^')
-			return new TokenBuffer(TokenType.PUNCTOR, "^", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "^");
 		if(c == '*')
-			return new TokenBuffer(TokenType.PUNCTOR, "*", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "*");
 		if(c == '/')
-			return new TokenBuffer(TokenType.PUNCTOR, "/", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "/");
 		if(c == '?')
-			return new TokenBuffer(TokenType.PUNCTOR, "?", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "?");
 		if(c == '&'){
 			if(this.reader.peek() == '&'){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "&&", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "&&");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "&", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "&");
 		}
 		if(c == '<'){
 			if(this.reader.peek() == '='){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "<=", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "<=");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "<", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "<");
 		}
 		if(c == '>'){
 			if(this.reader.peek() == '='){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, ">=", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, ">=");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, ">", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, ">");
 		}
 		if(c == '|'){
 			if(this.reader.peek() == '|'){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "||", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "||");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "|", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "|");
 		}
 		if(c == '='){
 			if(this.reader.peek() == '='){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "==", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "==");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "=", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "=");
 		}
 		if(c == '+'){
 			if(this.reader.peek() == '+'){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "++", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "++");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "+", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "+");
 		}
 		if(c == '!'){
 			if(this.reader.peek() == '='){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "!=", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "!=");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "!", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "!");
 		}
 		if(c == '-'){
 			if(this.reader.peek() == '-'){
 				this.reader.read();
-				return new TokenBuffer(TokenType.PUNCTOR, "--", this.reader.getPath(), this.reader.getLine());
+				return this.buffer(TokenType.PUNCTOR, "--");
 			}
-			return new TokenBuffer(TokenType.PUNCTOR, "-", this.reader.getPath(), this.reader.getLine());
+			return this.buffer(TokenType.PUNCTOR, "-");
 		}
 		throw new RTLInterprenterException("Unknown char detected in the source: "+((char)c)+"("+c+")",
 		this.reader.getPath(), this.reader.getLine());
@@ -219,6 +221,7 @@ public class Tokenizer {
 
 	private int gc() throws RTLInterprenterException{
 		int c = this.reader.read();
+		this.pos = new TokenPos(this.reader.getPath(), this.reader.getLine());
 
         if(c == ' ' || c == '\n')
         	return this.gc();
@@ -250,5 +253,9 @@ public class Tokenizer {
 		}
 
 		return false;
+	}
+
+	private TokenBuffer buffer(TokenType type, String context){
+		return new TokenBuffer(type, context, this.pos);
 	}
 }

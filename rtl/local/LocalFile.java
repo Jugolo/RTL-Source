@@ -3,6 +3,7 @@ package rtl.local;
 import rtl.exception.RTLRuntimeException;
 
 import java.io.RandomAccessFile;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -17,6 +18,10 @@ public class LocalFile {
 		}catch(FileNotFoundException | IllegalArgumentException e){
 			throw new RTLRuntimeException(e.getMessage());
 		}
+	}
+
+	public boolean setExecutable(){
+		return (new File(this.path)).setExecutable(true, false);
 	}
 
 	public String getPath(){

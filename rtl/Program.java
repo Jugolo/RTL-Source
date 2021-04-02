@@ -17,6 +17,7 @@ public class Program{
 		"rtl.io.tcp.server",
 		"rtl.io.tcp.client",
 		"rtl.io.file",
+		"rtl.io.dir",
 		"rtl.system.thread",
 		"rtl.string",
 		"rtl.array",
@@ -100,6 +101,9 @@ public class Program{
 						if(c.isBreak()){
 							this.popPos();
 							return Complication.normal();
+						}else if(c.isContinue()){
+							c = Complication.normal();
+							continue;
 						}
 						this.popPos();
 						return c;
@@ -118,7 +122,10 @@ public class Program{
 				 		if(c.isBreak()){
 				 			this.popPos();
 				 			return Complication.normal();
-				 		}
+				 		}else if(c.isContinue()){
+							c = Complication.normal();
+							continue;
+						}
 				 		this.popPos();
 				 		return c;
 				 	}
@@ -174,6 +181,9 @@ public class Program{
 			case BREAK:
 			    this.popPos();
 				return Complication._break();
+			case CONTINUE:
+				this.popPos();
+				return Complication._continue();
 		}
 		throw new RTLRuntimeException("Unknown statment type: "+statment.type);
 	}

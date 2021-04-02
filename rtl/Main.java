@@ -11,16 +11,26 @@ public class Main {
 			return;
 		}
 
+		boolean wait = args[0].indexOf("file://") == 0;
+
 		int pos = args[0].lastIndexOf(".");
 		if(pos == -1 || !args[0].substring(pos+1).equals("rts")){
 			System.out.println("Unknown file prototcol. Only accept .rts");
+			if(wait)
+				System.console().readLine();
 			return;
+		}
+
+		if(wait){
+			args[0] = args[0].substring(7);
 		}
 
 		//okay let get the file and see what happens
 		File programCode = new File(args[0]);
 		if(!programCode.exists()){
 			System.out.println("Failed to locate the file. Please controle the path");
+			if(wait)
+				System.console().readLine();
 			return;
 		}
 
@@ -42,5 +52,7 @@ public class Main {
 			System.err.println("---");
 			e.printStackTrace();
 		}
+		if(wait)
+			System.console().readLine();
 	}
 }

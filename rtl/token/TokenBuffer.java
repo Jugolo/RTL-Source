@@ -5,14 +5,12 @@ import rtl.exception.RTLInterprenterException;
 public class TokenBuffer {
 	private TokenType type;
 	private String context;
-	private String file;
-	private int line;
+	private TokenPos pos;
 
-	public TokenBuffer(TokenType type, String context, String file, int line){
+	public TokenBuffer(TokenType type, String context, TokenPos pos){
 		this.type = type;
 		this.context = context;
-		this.file = file;
-		this.line = line;
+		this.pos = pos;
 	}
 
 	public TokenType type(){
@@ -24,21 +22,21 @@ public class TokenBuffer {
 	}
 
 	public String file(){
-		return this.file;
+		return this.pos.file;
 	}
 
 	public int line(){
-		return this.line;
+		return this.pos.line;
 	}
 
 	public void expect(TokenType type) throws RTLInterprenterException{
 		if(type != this.type)
-			throw new RTLInterprenterException("Unexpected type '"+this.type+"' expected '"+type+"'", this.file, this.line);
+			throw new RTLInterprenterException("Unexpected type '"+this.type+"' expected '"+type+"'", this.pos.file, this.pos.line);
 	}
 
 	public void expect(TokenType type, String context) throws RTLInterprenterException{
 		if(this.type != type || !context.equals(this.context))
-		  throw new RTLInterprenterException("Unexpected '"+this.context+"'("+this.type+") expected '"+context+"'("+type+")", this.file, this.line);
+		  throw new RTLInterprenterException("Unexpected '"+this.context+"'("+this.type+") expected '"+context+"'("+type+")", this.pos.file, this.pos.line);
 	}
 
 	public boolean is(TokenType type){

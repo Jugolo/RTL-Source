@@ -17,7 +17,7 @@ public class ArrayReference implements IReference{
 
 	public Object toValue() throws RTLRuntimeException{
 		if(this.base.size() <= this.index || this.index < 0)
-			throw new RTLRuntimeException("Index out of size");
+			throw new RTLRuntimeException("Index out of size: "+this.index);
 		return this.base.get(this.index);
 	}
 
@@ -27,7 +27,7 @@ public class ArrayReference implements IReference{
 			return;
 		}
 		if(this.base.size()+1 < this.index || this.index < 0)
-			throw new RTLRuntimeException("Index out of size");
+			throw new RTLRuntimeException("Index out of size: "+this.index);
 		this.base.put(this.index, obj);
 	}
 }

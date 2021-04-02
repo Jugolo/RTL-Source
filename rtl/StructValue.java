@@ -20,7 +20,7 @@ public class StructValue {
 	public Object get(String name) throws RTLRuntimeException{
 		//if the name is _struct it is not a item its containe.
 		if(name.equals("_struct")){
-			return new StructDec(this.owner);
+			return new rtl.StructDec(this.owner);
 		}
 		for(int i=0;i<this.fieldsSize;i++){
 			if(this.fields[i].name.equals(name))

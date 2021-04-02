@@ -33,7 +33,11 @@ public class Expresion {
 				Object obj = Reference.toValue(this.left.get(program, db));
 				return TypeConveter.toFunction(obj).call(program, this.getArgs(program, this.list, db));
 			case NUMBER:
-				return Integer.parseInt(this.str);
+			    try{
+					return Integer.parseInt(this.str);
+			    }catch(NumberFormatException e){
+			    	return Long.parseLong(this.str);
+			    }
 			case COMPARE:
 			    l = Reference.toValue(this.left.get(program, db));
 			    r = Reference.toValue(this.right.get(program, db));
@@ -63,8 +67,27 @@ public class Expresion {
 				if(this.str.equals("+")){
 					if(!TypeConveter.isNumber(l) || !TypeConveter.isNumber(r))
 						return TypeConveter.string(l)+TypeConveter.string(r);
+					
+
+					if(l instanceof Integer)
+						return (int)l+TypeConveter.toInt(r);
+					if(l instanceof Double)
+						return (double)l+TypeConveter.toDouble(r);
+					if(l instanceof Long)
+						return (long)l+TypeConveter.toLong(r);
+
 					return TypeConveter.toInt(l)+TypeConveter.toInt(r);
 				}
+
+				if(!TypeConveter.isNumber(l) || !TypeConveter.isNumber(r))
+					throw new RTLRuntimeException("Cant use non numric value to -");
+
+				if(l instanceof Integer)
+					return (int)l-TypeConveter.toInt(r);
+				if(l instanceof Double)
+					return (double)l-TypeConveter.toDouble(r);
+				if(l instanceof Long)
+					return (long)l-TypeConveter.toLong(r);
 
 				return TypeConveter.toInt(l)-TypeConveter.toInt(r);
 			case ARRAY:
