@@ -50,7 +50,31 @@ public class LocalPath {
 		    case "rtl.time":
 		    	time(db);
 		    break;
+		    case "rtl":
+		    	rtl(db);
+		    break;
 		}
+	}
+
+	private static void rtl(VariabelDatabase db) throws RTLRuntimeException{
+		Struct RTL = new Struct("RTL", new String[]{
+			"version"
+		});
+		
+		VariableReference ref = db.get("RTL");
+		ref.put(RTL);
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+
+		
+		ref = db.get("rtl");
+		ref.put(new Function("rtl", db, new CallableArgs(), new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				StructValue rtl = TypeConveter.toStructValue(db.get("RTL"));
+				((StructReference)rtl.get("version")).put(Main.VERSION);
+				return rtl;
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
 	private static void array(VariabelDatabase db) throws RTLRuntimeException{

@@ -21,7 +21,8 @@ public class Program{
 		"rtl.system.thread",
 		"rtl.string",
 		"rtl.array",
-		"rtl.time"
+		"rtl.time",
+		"rtl"
 	};
 
 	public Program(String root){
@@ -124,10 +125,10 @@ public class Program{
 				 			return Complication.normal();
 				 		}else if(c.isContinue()){
 							c = Complication.normal();
-							continue;
+						}else{
+				 			this.popPos();
+				 			return c;
 						}
-				 		this.popPos();
-				 		return c;
 				 	}
 				 	if(statment.forData.last != null){
 				 		Reference.toValue(statment.forData.last.get(this, db));
