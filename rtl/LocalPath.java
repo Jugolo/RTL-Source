@@ -8,21 +8,29 @@ import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.lang.Math;
 
 import rtl.exception.RTLRuntimeException;
 import rtl.exception.RTLInterprenterException;
 import rtl.exception.RTLException;
 import rtl.local.TcpSocketClient;
 import rtl.local.LocalFile;
+import rtl.local.MySQL;
+import rtl.local.MySQLResult;
 
 public class LocalPath {
 	private static Random rand = new Random();
 	
-	public static void eval(String name, VariabelDatabase db, String root) throws RTLRuntimeException{
+	public static void eval(String name, VariabelDatabase db, ProgramData data) throws RTLRuntimeException{
 		switch(name){
-			case "rtl.math.rand":
-				rand(db);
-			break;
+		    case "rtl.math.rand":
+			rand(db);
+	            break;
+		    case "rtl.math.function":
+			math(db);
+		    break;
 		    case "rtl.typeconveter":
 		    	typeconveter(db);
 		    break;
@@ -30,16 +38,16 @@ public class LocalPath {
 		    	iotcpserver(db);
 		    break;
 		    case "rtl.io.tcp.client":
-				iotcp(db);
+			iotcp(db);
 		    break;
 		    case "rtl.io.file":
-				iofile(db, root);
+			iofile(db);
 		    break;
 		    case "rtl.io.dir":
-		        iodir(db, root);
+		        iodir(db);
 		    break;
 		    case "rtl.system.thread":
-		    	thread(db, root);
+		    	thread(db, data);
 		    break;
 		    case "rtl.string":
 		    	string(db);
@@ -51,14 +59,142 @@ public class LocalPath {
 		    	time(db);
 		    break;
 		    case "rtl":
-		    	rtl(db);
+		    	rtl(db, data);
+		    break;
+		    //from version 1.1
+		    case "rtl.db.mysql":
+		    	mysql(db);
+		    break;
+		    case "rtl.error":
+			error(db);
+		    break;
+		    case "rtl.test.asset":
+			asset(db);
 		    break;
 		}
 	}
+	
+	private static void asset(VariabelDatabase db) throws RTLRuntimeException{
+		VariableReference ref = db.get("asset");
+		CallableArgs arg = new CallableArgs();
+		arg.add("bool", "testConditon");
+		arg.add("string", "errorMessage");
+		ref.put(new Function("asset", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!TypeConveter.bool(arg[0])){
+					throw new RTLRuntimeException(TypeConveter.string(arg[1]));
+				}
+				return null;
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
+	
+	private static void math(VariabelDatabase db) throws RTLRuntimeException{
+		VariableReference ref = db.get("pow");
+		CallableArgs arg = new CallableArgs();
+		arg.add("number", "first");
+		arg.add("number", "second");
+		ref.put(new Function("pow", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return Math.pow(TypeConveter.toDouble(arg[0]), TypeConveter.toDouble(arg[1]));
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
+	
+	private static void error(VariabelDatabase db) throws RTLRuntimeException{
+		VariableReference ref = db.get("error");
+		CallableArgs arg = new CallableArgs();
+		arg.add("string", "message");
+		ref.put(new Function("error", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				throw new RTLRuntimeException(TypeConveter.string(arg[0]));
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
 
-	private static void rtl(VariabelDatabase db) throws RTLRuntimeException{
+	private static void mysql(VariabelDatabase db) throws RTLRuntimeException{
+		VariableReference ref = db.get("mysql");
+		CallableArgs arg = new CallableArgs();
+		arg.add("string", "host");
+		arg.add("string", "username");
+		arg.add("string", "password");
+                arg.add("string", "table");
+		ref.put(new Function("mysql", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+                                try{
+					String password = TypeConveter.string(arg[2]);
+					if(password.length() > 0)
+						password = "&password="+password;
+                                	return new MySQL(DriverManager.getConnection("jdbc:mysql://"+((String)arg[0])+"/"+((String)arg[3])+"?" +
+	                                   "user="+((String)arg[1])+password));
+				}catch(SQLException e){
+					return null;
+                                }
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("mysql_escape");
+		arg = new CallableArgs();
+		arg.add("string", "query");
+		ref.put(new Function("mysql_escape", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return TypeConveter.string(arg[0]).replaceAll("\\\\", "\\\\\\\\")
+				.replaceAll("\n", "\\\\n")
+				.replaceAll("\r", "\\\\r")
+				.replaceAll("\t", "\\\\t")
+				.replaceAll("\00", "\\\\0")
+				.replaceAll("'", "\\\\'")
+				.replaceAll("\"", "\\\\\"");
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("mysql_query");
+		arg = new CallableArgs();
+		arg.add("mysql_connection");
+		arg.add("string", "query");
+		ref.put(new Function("mysql_query", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!(arg[0] instanceof MySQL)){
+					throw new RTLRuntimeException("mysql_query expect argument 0 to be <mysqlstream>");
+				}
+				
+				return ((MySQL)arg[0]).query(TypeConveter.string(arg[1]));
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("mysql_fetchHashmap");
+		arg = new CallableArgs();
+		arg.add("mysqlresult");
+		ref.put(new Function("mysql_fetchHashmap", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!(arg[0] instanceof MySQLResult))
+					throw new RTLRuntimeException("mysql_fetchHashmap expect argument 0 to be <mysqlresultstream>");
+				return ((MySQLResult)arg[0]).fetchHashmap(db, program);
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("mysql_fetch");
+		ref.put(new Function("mysql_fetchHashmap", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				if(!(arg[0] instanceof MySQLResult))
+					throw new RTLRuntimeException("mysql_fetchHashmap expect argument 0 to be <mysqlresultstream>");
+				return ((MySQLResult)arg[0]).fetch();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+	}
+
+	private static void rtl(VariabelDatabase db, ProgramData data) throws RTLRuntimeException{
 		Struct RTL = new Struct("RTL", new String[]{
-			"version"
+			"version",
+			"test"
 		});
 		
 		VariableReference ref = db.get("RTL");
@@ -69,8 +205,9 @@ public class LocalPath {
 		ref = db.get("rtl");
 		ref.put(new Function("rtl", db, new CallableArgs(), new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
-				StructValue rtl = TypeConveter.toStructValue(db.get("RTL"));
+				StructValue rtl = new StructValue(RTL);
 				((StructReference)rtl.get("version")).put(Main.VERSION);
+				((StructReference)rtl.get("test")).put(data.test);
 				return rtl;
 			}
 		}));
@@ -80,7 +217,7 @@ public class LocalPath {
 	private static void array(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference  ref = db.get("count");
 		CallableArgs arg = new CallableArgs();
-		arg.add("array");
+		arg.add("array", "array");
 		ref.put(new Function("count", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return TypeConveter.array(arg[0]).size();
@@ -90,7 +227,7 @@ public class LocalPath {
 
 		ref = db.get("in_array");
 		arg = new CallableArgs();
-		arg.add("array");
+		arg.add("array", "array");
 		arg.add("find");
 		ref.put(new Function("in_array", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
@@ -108,8 +245,8 @@ public class LocalPath {
 	private static void string(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference ref = db.get("str_split");
 		CallableArgs arg = new CallableArgs();
-		arg.add("str");
-		arg.add("seperator");
+		arg.add("string", "str");
+		arg.add("string", "seperator");
 		ref.put(new Function("str_split", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return new Array(TypeConveter.string(arg[0]).split(TypeConveter.string(arg[1])));
@@ -117,10 +254,10 @@ public class LocalPath {
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
-        ref = db.get("strpos");
+		ref = db.get("strpos");
 		arg = new CallableArgs();
-		arg.add("str");
-		arg.add("find");
+		arg.add("string", "str");
+		arg.add("string", "find");
 		ref.put(new Function("strpos", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return TypeConveter.string(arg[0]).indexOf(TypeConveter.string(arg[1]));
@@ -138,9 +275,9 @@ public class LocalPath {
 
 		ref = db.get("substr");
 		arg = new CallableArgs();
-		arg.add("str");
-		arg.add("start");
-		arg.add("length");
+		arg.add("string", "str");
+		arg.add("number", "start");
+		arg.add("number", "length");
 		ref.put(new Function("substr", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				String str = TypeConveter.string(arg[0]);
@@ -160,7 +297,7 @@ public class LocalPath {
 
 		ref = db.get("strlen");
 		arg = new CallableArgs();
-		arg.add("str");
+		arg.add("string", "str");
 		ref.put(new Function("strlen", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return TypeConveter.string(arg[0]).length();
@@ -179,8 +316,26 @@ public class LocalPath {
 			}
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("strtolower");
+		ref.put(new Function("strtolower", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return TypeConveter.string(arg[0]).toLowerCase();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("strtoupper");
+		ref.put(new Function("strtoupper", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return TypeConveter.string(arg[0]).toUpperCase();
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
 		ref = db.get("chr");
+		arg = new CallableArgs();
+		arg.add("number", "number");
 		ref.put(new Function("chr", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return ((char)TypeConveter.toInt(arg[0]))+"";
@@ -188,31 +343,32 @@ public class LocalPath {
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
+
 		ref = db.get("strchar");
-	    arg = new CallableArgs();
-	    arg.add("str");
-	    arg.add("index");
-	    ref.put(new Function("strchar", db, arg, new ICallable(){
-	    	public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
-	    		try{
-	    			return TypeConveter.string(arg[0]).charAt(TypeConveter.toInt(arg[1]))+"";
-	    		}catch(IndexOutOfBoundsException e){
-	    			return "";
-	    		}
-	    	}
-	    }));
-	    ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		arg = new CallableArgs();
+		arg.add("string", "str");
+		arg.add("number", "_index");
+		ref.put(new Function("strchar", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				try{
+					return TypeConveter.string(arg[0]).charAt(TypeConveter.toInt(arg[1]))+"";
+				}catch(IndexOutOfBoundsException e){
+					return "";
+				}
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
-	private static void thread(VariabelDatabase db, String root) throws RTLRuntimeException{
+	private static void thread(VariabelDatabase db, ProgramData data) throws RTLRuntimeException{
 		VariableReference ref = db.get("thread");
 		CallableArgs arg = new CallableArgs();
-		arg.add("func");
+		arg.add("function", "func");
 		ref.put(new Function("thread", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db){
 				Thread thread = new Thread(new Runnable(){
 					public void run(){
-						Program p = new Program(root);
+						Program p = new Program(data);
 						try{
 							TypeConveter.toFunction(arg[0]).call(p, new Object[0]);
 						}catch(RTLRuntimeException e){
@@ -236,10 +392,10 @@ public class LocalPath {
 		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
-	private static void iofile(VariabelDatabase db, String rootName) throws RTLRuntimeException{
+	private static void iofile(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference ref = db.get("file_exists");
     	CallableArgs arg = new CallableArgs();
-    	arg.add("path");
+    	arg.add("string", "path");
     	ref.put(new Function("file_exists", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			return new File(TypeConveter.string(arg[0])).exists();
@@ -247,10 +403,10 @@ public class LocalPath {
     	}));
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 		
-		ref = db.get("file");
+	ref = db.get("file");
     	arg = new CallableArgs();
-    	arg.add("path");
-    	arg.add("mode");
+    	arg.add("string", "path");
+    	arg.add("string", "mode");
     	ref.put(new Function("file", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			return new LocalFile(TypeConveter.string(arg[0]), TypeConveter.string(arg[1]));
@@ -260,7 +416,7 @@ public class LocalPath {
 
     	ref = db.get("file_path");
     	arg = new CallableArgs();
-    	arg.add("file");
+    	arg.add("_file");
     	ref.put(new Function("file_path", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof LocalFile)){
@@ -286,7 +442,7 @@ public class LocalPath {
 
     	ref = db.get("file_size");
     	arg = new CallableArgs();
-    	arg.add("file");
+    	arg.add("_file");
     	ref.put(new Function("file_size", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof LocalFile)){
@@ -300,9 +456,9 @@ public class LocalPath {
 
     	ref = db.get("file_readLength");
     	arg = new CallableArgs();
-    	arg.add("file");
-    	arg.add("index");
-    	arg.add("length");
+    	arg.add("_file");
+    	arg.add("number", "_index");
+    	arg.add("number", "length");
     	ref.put(new Function("file_readLength", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof LocalFile)){
@@ -316,9 +472,9 @@ public class LocalPath {
 
     	ref = db.get("file_readBytes");
     	arg = new CallableArgs();
-    	arg.add("file");
-    	arg.add("index");
-    	arg.add("length");
+    	arg.add("_file");
+    	arg.add("number", "_index");
+    	arg.add("number", "length");
     	ref.put(new Function("file_readBytes", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof LocalFile)){
@@ -332,8 +488,8 @@ public class LocalPath {
 
     	ref = db.get("file_write");
     	arg = new CallableArgs();
-    	arg.add("file");
-    	arg.add("message");
+    	arg.add("_file");
+    	arg.add("string", "message");
     	ref.put(new Function("file_write", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof LocalFile)){
@@ -360,10 +516,10 @@ public class LocalPath {
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
-	private static void iodir(VariabelDatabase db, String root) throws RTLRuntimeException{
+	private static void iodir(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference ref = db.get("dir");
 		CallableArgs arg = new CallableArgs();
-		arg.add("path");
+		arg.add("string", "path");
 		ref.put(new Function("dir", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				return new File(TypeConveter.string(arg[0]));
@@ -373,7 +529,7 @@ public class LocalPath {
 
 		ref = db.get("dir_exists");
 		arg = new CallableArgs();
-		arg.add("dir");
+		arg.add("_dir");
 		ref.put(new Function("dir_exists", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				if(!(arg[0] instanceof File)){
@@ -405,8 +561,8 @@ public class LocalPath {
     private static void iotcp(VariabelDatabase db) throws RTLRuntimeException{
     	VariableReference ref = db.get("tcp");
     	CallableArgs arg = new CallableArgs();
-    	arg.add("server");
-    	arg.add("port");
+    	arg.add("string", "server");
+    	arg.add("number", "port");
     	ref.put(new Function("tcp", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			try{
@@ -420,7 +576,7 @@ public class LocalPath {
     	
     	ref = db.get("tcp_readln");
     	arg = new CallableArgs();
-    	arg.add("tcp");
+    	arg.add("_tcp");
     	ref.put(new Function("tcp_readln", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof TcpSocketClient)){
@@ -480,8 +636,8 @@ public class LocalPath {
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
     	arg = new CallableArgs();
-    	arg.add("tcp");
-    	arg.add("length");
+    	arg.add("_tcp");
+    	arg.add("number", "length");
     	ref = db.get("tcp_readLength");
     	ref.put(new Function("tcp_readLength", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
@@ -495,8 +651,8 @@ public class LocalPath {
     	
 
     	arg = new CallableArgs();
-    	arg.add("tcp");
-    	arg.add("message");
+    	arg.add("_tcp");
+    	arg.add("string", "message");
     	ref = db.get("tcp_writeln");
     	ref.put(new Function("tcp_writeln", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
@@ -522,6 +678,9 @@ public class LocalPath {
     	ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 
     	ref = db.get("tcp_writeBytes");
+    	arg = new CallableArgs();
+    	arg.add("tcpstream");
+    	arg.add("message");
     	ref.put(new Function("tcp_writeBytes", db, arg, new ICallable(){
     		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
     			if(!(arg[0] instanceof TcpSocketClient)){
@@ -554,7 +713,7 @@ public class LocalPath {
 	private static void iotcpserver(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference ref = db.get("tcpserver_open");
 		CallableArgs arg = new CallableArgs();
-		arg.add("port");
+		arg.add("number", "port");
 		ref.put(new Function("tcpserver_open", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				int port = TypeConveter.toInt(arg[0]);
@@ -590,7 +749,7 @@ public class LocalPath {
 	private static void typeconveter(VariabelDatabase db) throws RTLRuntimeException{
 		VariableReference ref = db.get("toInt");
 		CallableArgs arg = new CallableArgs();
-		arg.add("str");
+		arg.add("string", "str");
 		ref.put(new Function("toInt", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				try{
@@ -602,12 +761,33 @@ public class LocalPath {
 		}));
 		ref.attribute(VariabelAttribute.NOT_WRITE);
 		ref.attribute(VariabelAttribute.GLOBAL);
+		
+		//from 1.1
+		ref = db.get("numberInt");
+		arg = new CallableArgs();
+		arg.add("number", "number");
+		ref.put(new Function("numberInt", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return (int)TypeConveter.toDouble(arg[0]);
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
+		
+		ref = db.get("numberDouble");
+		arg = new CallableArgs();
+		arg.add("number", "number");
+		ref.put(new Function("numberDouble", db, arg, new ICallable(){
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+				return TypeConveter.toDouble(arg[0]);
+			}
+		}));
+		ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 	}
 
 	private static void rand(VariabelDatabase db) throws RTLRuntimeException{
 		CallableArgs arg = new CallableArgs();
-		arg.add("min");
-		arg.add("max");
+		arg.add("number", "min");
+		arg.add("number", "max");
 		VariableReference ref = db.get("rand");
 		ref.put(new Function("rand", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
@@ -659,7 +839,7 @@ public class LocalPath {
 
 		ref = db.get("utcstring");
 		CallableArgs arg = new CallableArgs();
-		arg.add("time");
+		arg.add("number", "time");
 		ref.put(new Function("utcstring", db, arg, new ICallable(){
 			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
 				Calendar c = Calendar.getInstance();

@@ -12,8 +12,11 @@ public class Install {
   		System.err.println("Failed to finde the install program");
   		return;
   	}
+	
+	ProgramData pd = new ProgramData();
+	pd.root = code.getParent();
 
-  	Program program = new Program(code.getParent());
+  	Program program = new Program(pd);
 
 	try{
 	  VariabelDatabase db = new VariabelDatabase();

@@ -45,6 +45,10 @@ public class Complication {
 		return this.type == ComplicationType.NORMAL;
 	}
 
+	public boolean isReturn(){
+		return this.type == ComplicationType.RETURN;
+	}
+
 	public boolean isBreak(){
 		return this.type == ComplicationType.BREAK;
 	}

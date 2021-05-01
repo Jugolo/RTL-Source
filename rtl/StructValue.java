@@ -29,4 +29,8 @@ public class StructValue {
 
 		throw new RTLRuntimeException("Unknown struct field '"+name+"' in the struct "+this.owner.getName());
 	}
+
+	public String getName(){
+		return this.owner.getName();
+	}
 }

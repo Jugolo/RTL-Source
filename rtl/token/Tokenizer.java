@@ -28,6 +28,7 @@ public class Tokenizer {
 		"false",
 		"null",
 		"global",
+		"const",
 		"continue"
 		};
 	
@@ -70,16 +71,21 @@ public class Tokenizer {
 		getCleanNumber(builder);
 		if(this.reader.peek() == '.'){
 			builder.append(".");
-			getCleanNumber(builder);
+			this.reader.read();
+			if(!getCleanNumber(builder))
+				throw new RTLInterprenterException("After . must be a number");
 		}
 
 		return this.buffer(TokenType.NUMBER, builder.toString());
 	}
 
-	private void getCleanNumber(StringBuilder buffer) throws RTLInterprenterException{
+	private boolean getCleanNumber(StringBuilder buffer) throws RTLInterprenterException{
+		if(!this.isNumber(this.reader.peek()))
+			return false;
 		while(this.isNumber(this.reader.peek())){
 			buffer.append((char)this.reader.read());
 		}
+		return true;
 	}
 
 	private TokenBuffer getString(int stop) throws RTLInterprenterException{
@@ -126,7 +132,6 @@ public class Tokenizer {
         if(exists(buffer.toString(), keywords))
         	return this.buffer(TokenType.KEYWORD, buffer.toString());
 		
-		//System.out.println(buffer.toString());
 		return this.buffer(TokenType.IDENTIFY, buffer.toString());
 	}
 
@@ -159,6 +164,8 @@ public class Tokenizer {
 			return this.buffer(TokenType.PUNCTOR, "/");
 		if(c == '?')
 			return this.buffer(TokenType.PUNCTOR, "?");
+		if(c == '~')
+			return this.buffer(TokenType.PUNCTOR, "~");
 		if(c == '&'){
 			if(this.reader.peek() == '&'){
 				this.reader.read();
@@ -170,6 +177,9 @@ public class Tokenizer {
 			if(this.reader.peek() == '='){
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, "<=");
+			}else if(this.reader.peek() == '<'){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "<<");
 			}
 			return this.buffer(TokenType.PUNCTOR, "<");
 		}
@@ -177,6 +187,13 @@ public class Tokenizer {
 			if(this.reader.peek() == '='){
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, ">=");
+			}else if(this.reader.peek() == '>'){
+				this.reader.read();
+				if(this.reader.peek() == '>'){
+					this.reader.read();
+					return this.buffer(TokenType.PUNCTOR, ">>>");
+				}
+				return this.buffer(TokenType.PUNCTOR, ">>");
 			}
 			return this.buffer(TokenType.PUNCTOR, ">");
 		}
@@ -184,6 +201,11 @@ public class Tokenizer {
 			if(this.reader.peek() == '|'){
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, "||");
+			}
+			
+			if(this.reader.peek() == '='){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "|=");
 			}
 			return this.buffer(TokenType.PUNCTOR, "|");
 		}
@@ -199,6 +221,10 @@ public class Tokenizer {
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, "++");
 			}
+			if(this.reader.peek() == '='){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "+=");
+			}
 			return this.buffer(TokenType.PUNCTOR, "+");
 		}
 		if(c == '!'){
@@ -213,6 +239,10 @@ public class Tokenizer {
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, "--");
 			}
+			if(this.reader.peek() == '='){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "-=");
+			}
 			return this.buffer(TokenType.PUNCTOR, "-");
 		}
 		throw new RTLInterprenterException("Unknown char detected in the source: "+((char)c)+"("+c+")",
@@ -223,7 +253,7 @@ public class Tokenizer {
 		int c = this.reader.read();
 		this.pos = new TokenPos(this.reader.getPath(), this.reader.getLine());
 
-        if(c == ' ' || c == '\n')
+        if(c == ' ' || c == '\n' || c == '\t')
         	return this.gc();
 
         if(c == '/' && this.reader.peek() == '/'){

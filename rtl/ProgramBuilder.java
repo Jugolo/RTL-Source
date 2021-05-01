@@ -41,6 +41,8 @@ public class ProgramBuilder {
 					return struct(token);
 				case "global":
 					return global(token);
+				case "const":
+					return _const(token);
 				case "for":
 					return _for(token);
 				case "break":
@@ -95,7 +97,11 @@ public class ProgramBuilder {
 
 	private static Statment global(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.GLOBAL, token.current().file(), token.current().line());
-		token.next().expect(TokenType.IDENTIFY);
+		if(token.next().is(TokenType.KEYWORD, "const")){
+			statment.isConst = true;
+			token.next();
+		}
+		token.current().expect(TokenType.IDENTIFY);
 		statment.name = token.current().context();
 		if(token.next().is(TokenType.PUNCTOR, "=")){
 			token.next();
@@ -106,6 +112,24 @@ public class ProgramBuilder {
 		token.next();
 		return statment;
 	}
+
+    private static Statment _const(Tokenizer token) throws RTLInterprenterException{
+    	Statment statment = new Statment(StatmentType.CONST, token.current().file(), token.current().line());
+    	if(token.next().is(TokenType.KEYWORD, "global")){
+    		statment.isGlobal = true;
+    		token.next();
+    	}
+        token.current().expect(TokenType.IDENTIFY);
+        statment.name = token.current().context();
+        if(token.next().is(TokenType.PUNCTOR, "=")){
+        	token.next();
+        	statment.expresion = ExpresionBuilder.build(token);
+        }
+
+        token.current().expect(TokenType.PUNCTOR, ";");
+        token.next();
+    	return statment;
+    }
 
 	private static Statment struct(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.STRUCT, token.current().file(), token.current().line());
@@ -177,20 +201,10 @@ public class ProgramBuilder {
 
 	private static Statment function(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.FUNCTION, token.current().file(), token.current().line());
-		token.next().expect(TokenType.IDENTIFY);
-		statment.name = token.current().context();
-		token.next().expect(TokenType.PUNCTOR, "(");
-		statment.arg = new CallableArgs();
-		if(!token.next().is(TokenType.PUNCTOR, ")")){
-			addArgs(token, statment.arg);
-			while(token.current().is(TokenType.PUNCTOR, ",")){
-				token.next();
-				addArgs(token, statment.arg);
-			}
-		}
-		token.current().expect(TokenType.PUNCTOR, ")");
+		statment.name = token.next().expect(TokenType.IDENTIFY);
+		token.next();
+		statment.arg = FunctionUntil.getArg(token);
 		token.next().expect(TokenType.PUNCTOR, "{");
-		
 		statment.body = getBody(token);
 		return statment;
 	}
@@ -207,8 +221,14 @@ public class ProgramBuilder {
 	private static Statment print(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.PRINT, token.current().file(), token.current().line());
 		token.next();
-		statment.expresion = ExpresionBuilder.build(token);
+		ArrayList<Expresion> buffer = new ArrayList<Expresion>();
+		buffer.add(ExpresionBuilder.build(token));
+		while(token.current().is(TokenType.PUNCTOR, ",")){
+			token.next();
+			buffer.add(ExpresionBuilder.build(token));
+		}
 		token.current().expect(TokenType.PUNCTOR, ";");
+		statment.expresions = toExpresionArray(buffer);
 		token.next();
 		return statment;
 	}
@@ -217,8 +237,14 @@ public class ProgramBuilder {
 	private static Statment println(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.PRINTLN, token.current().file(), token.current().line());
 		token.next();
-		statment.expresion = ExpresionBuilder.build(token);
+		ArrayList<Expresion> buffer = new ArrayList<Expresion>();
+		buffer.add(ExpresionBuilder.build(token));
+		while(token.current().is(TokenType.PUNCTOR, ",")){
+			token.next();
+			buffer.add(ExpresionBuilder.build(token));
+		}
 		token.current().expect(TokenType.PUNCTOR, ";");
+		statment.expresions = toExpresionArray(buffer);
 		token.next();
 		return statment;
 	}
@@ -231,13 +257,7 @@ public class ProgramBuilder {
 		return statment;
 	}
 
-	private static void addArgs(Tokenizer token, CallableArgs arg) throws RTLInterprenterException{
-		token.current().expect(TokenType.IDENTIFY);
-		arg.add(token.current().context());
-		token.next();
-	}
-
-	private static Statment[] getBody(Tokenizer token) throws RTLInterprenterException{
+	public static Statment[] getBody(Tokenizer token) throws RTLInterprenterException{
 		if(token.current().is(TokenType.PUNCTOR, "{")){
 			token.next();
 			ArrayList<Statment> array = new ArrayList<Statment>();
@@ -265,6 +285,13 @@ public class ProgramBuilder {
 		for(int i=0;i<array.size();i++){
 			buffer[i] = array.get(i);
 		}
+		return buffer;
+	}
+	
+	private static Expresion[] toExpresionArray(ArrayList<Expresion> array){
+		Expresion[] buffer = new Expresion[array.size()];
+		for(int i=0;i<array.size();i++)
+			buffer[i] = array.get(i);
 		return buffer;
 	}
 }

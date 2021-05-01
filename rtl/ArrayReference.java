@@ -5,10 +5,16 @@ import rtl.exception.RTLRuntimeException;
 public class ArrayReference implements IReference{
 	private Array base;
 	private int index;
+	private boolean hasKey = false;
 
 	public ArrayReference(Array base, int index){
 		this.base = base;
 		this.index = index;
+		this.hasKey = true;
+	}
+	
+	public ArrayReference(Array base){
+		this.base = base;
 	}
 
 	public boolean hasBase(){
@@ -22,7 +28,7 @@ public class ArrayReference implements IReference{
 	}
 
 	public void put(Object obj) throws RTLRuntimeException{
-		if(this.index == -1){
+		if(!this.hasKey){
 			this.base.add(obj);
 			return;
 		}

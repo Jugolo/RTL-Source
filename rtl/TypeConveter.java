@@ -54,7 +54,7 @@ public class TypeConveter {
 		if(obj instanceof Integer)
 			return (int)obj;
 		if(obj instanceof Double)
-			return (int)((double)obj);
+			return (int)Math.round((double)obj);
 		if(obj instanceof Long)
 			return (int)((long)obj);
 			
@@ -63,7 +63,7 @@ public class TypeConveter {
 
 	public static double toDouble(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Integer)
-			return (double)((int)obj);
+			return ((Integer)obj).doubleValue();
 		if(obj instanceof Double)
 			return (double)obj;
 		if(obj instanceof Long)
@@ -74,7 +74,7 @@ public class TypeConveter {
 
 	public static long toLong(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Integer)
-			return (long)((int)obj);
+			return ((Integer)obj).longValue();
 		if(obj instanceof Double)
 			return (long)((double)obj);
 		if(obj instanceof Long)
@@ -93,11 +93,19 @@ public class TypeConveter {
 		if(obj instanceof String)
 			return (String)obj;
 
-		if(obj instanceof Integer)
+		if(obj instanceof Integer){
 			return ((int)obj)+"";
+		}
 
-		if(obj instanceof Double)
-			return ((double)obj)+"";
+		if(obj instanceof Double){
+		    double d = (double)obj;
+		    if((d % 1) == 0)
+				return Math.round(d)+"";
+			return d+"";
+		}
+			
+		if(obj instanceof Long)
+			return ((long)obj)+"";
 
 		throw new RTLRuntimeException("Cant convert "+type(obj)+" to string");
 	}

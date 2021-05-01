@@ -9,10 +9,11 @@ import java.net.URISyntaxException;
 
 public class Program{
 	private ArrayList<Statment> statment = new ArrayList<Statment>();
-	private String root;
+	public final ProgramData data;
 	private ArrayList<ExcutionPosition> lastPos = new ArrayList<ExcutionPosition>();
 	private String[] localPath = new String[]{
 		"rtl.math.rand",
+		"rtl.math.function",
 		"rtl.typeconveter",
 		"rtl.io.tcp.server",
 		"rtl.io.tcp.client",
@@ -22,11 +23,15 @@ public class Program{
 		"rtl.string",
 		"rtl.array",
 		"rtl.time",
-		"rtl"
+		"rtl",
+		//from version 1.1
+		"rtl.db.mysql",
+		"rtl.error",
+		"rtl.test.asset"
 	};
 
-	public Program(String root){
-		this.root = root;
+	public Program(ProgramData data){
+		this.data = data;
 	}
 
 	public Complication run(ProgramInstruc instruct, VariabelDatabase db) throws RTLRuntimeException{
@@ -62,17 +67,52 @@ public class Program{
 		VariableReference ref;
 		Complication c;
 		Object v;
+		Object[] ob;
 		this.pushPos(statment.file, statment.line);
 		switch(statment.type){
 			case PRINTLN:
-				System.out.println(TypeConveter.string(Reference.toValue(statment.expresion.get(this, db))));
+			    ob = toObjectArray(statment.expresions, db);
+			    if(this.data.print != null){
+					this.data.print.println(this, ob);
+					this.popPos();
+					return Complication.normal();
+				}
+				String println;
+				if(ob.length == 0){
+					println = "";
+				}else{
+					println = TypeConveter.string(ob[0]);
+					for(int i=1;i<ob.length;i++){
+						println += ", "+TypeConveter.string(ob[i]);
+					}
+				}
+				System.out.println(println);
 				this.popPos();
 				return Complication.normal();
 			case PRINT:
-				System.out.print(TypeConveter.string(Reference.toValue(statment.expresion.get(this, db))));
+			    ob = toObjectArray(statment.expresions, db);
+			    if(this.data.print != null){
+					this.data.print.print(this, ob);
+					this.popPos();
+					return Complication.normal();
+				}
+				String print;
+				if(ob.length == 0)
+					print = "";
+				else{
+					print = TypeConveter.string(ob[0]);
+					for(int i=1;i<ob.length;i++)
+						print += ", "+TypeConveter.string(ob[i]);
+				}
+				System.out.print(print);
 				this.popPos();
 				return Complication.normal();
 			case READLN:
+			    if(this.data.print != null){
+					this.data.print.readln(this, statment.name);
+					this.popPos();
+					return Complication.normal();
+				}
 				db.get(statment.name).put(System.console().readLine());
 				this.popPos();
 				return Complication.normal();
@@ -81,14 +121,7 @@ public class Program{
 				this.popPos();
 				return c;
 			case FUNCTION:
-				Function func = new Function(statment.name, db, statment.arg, new ICallable(){
-					public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
-							Complication c = program.run(new ProgramInstrucList(statment.body), db);
-							if(c.type() == ComplicationType.RETURN)
-								return c.value();
-							return null;
-					}
-				});
+			    Function func = FunctionUntil.getCallable(statment.name, db, statment.arg, statment.body);
 				ref = db.get(statment.name);
 				ref.put(func);
 				ref.attribute(VariabelAttribute.NOT_WRITE);
@@ -167,6 +200,20 @@ public class Program{
 				v = ref.toValue();
 				this.popPos();
 				return Complication.normal(v);
+			case CONST:
+				ref = db.get(statment.name);
+				if(statment.expresion != null){
+					ref.put(Reference.toValue(statment.expresion.get(this, db)));
+				}else{
+					if(!ref.hasBase())
+						ref.put(null);
+				}
+				ref.attribute(VariabelAttribute.NOT_WRITE);
+			    if(statment.isGlobal)
+			    	ref.attribute(VariabelAttribute.GLOBAL);
+			    v = ref.toValue();
+			    this.popPos();
+			    return Complication.normal(v);
 			case GLOBAL:
 			    ref = db.get(statment.name);
 			    if(statment.expresion != null){
@@ -176,6 +223,8 @@ public class Program{
 			    		ref.put(null);
 			    }
 			    ref.attribute(VariabelAttribute.GLOBAL);
+			    if(statment.isConst)
+			    	ref.attribute(VariabelAttribute.NOT_WRITE);
 			    v = ref.toValue();
 			    this.popPos();
 			    return Complication.normal(v);
@@ -202,7 +251,7 @@ public class Program{
 
 	private Complication getProgram(String path, VariabelDatabase db, String file, int line) throws RTLRuntimeException{
 		if(isLocalPath(path)){
-			LocalPath.eval(path, db, this.root);
+			LocalPath.eval(path, db, this.data);
 			return Complication.normal();
 		}
 		//if there is more end .. stop it here!!!
@@ -217,7 +266,7 @@ public class Program{
 				code = new File("./rtlSystem/"+path.replace(".", "/")+".rts");
 			}
 		}else{
-			code = new File(this.root, path);
+			code = new File(this.data.root, path);
 		}
 		
 		if(!code.exists() || !code.isFile())
@@ -241,5 +290,12 @@ public class Program{
 				return true;
 		}
 		return false;
+	}
+	
+	private Object[] toObjectArray(Expresion[] array, VariabelDatabase db) throws RTLRuntimeException{
+		Object[] buffer = new Object[array.length];
+		for(int i=0;i<array.length;i++)
+			buffer[i] = Reference.toValue(array[i].get(this, db));
+		return buffer;
 	}
 }

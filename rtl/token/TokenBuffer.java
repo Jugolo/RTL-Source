@@ -29,14 +29,16 @@ public class TokenBuffer {
 		return this.pos.line;
 	}
 
-	public void expect(TokenType type) throws RTLInterprenterException{
+	public String expect(TokenType type) throws RTLInterprenterException{
 		if(type != this.type)
 			throw new RTLInterprenterException("Unexpected type '"+this.type+"' expected '"+type+"'", this.pos.file, this.pos.line);
+	    return this.context;
 	}
 
-	public void expect(TokenType type, String context) throws RTLInterprenterException{
+	public String expect(TokenType type, String context) throws RTLInterprenterException{
 		if(this.type != type || !context.equals(this.context))
 		  throw new RTLInterprenterException("Unexpected '"+this.context+"'("+this.type+") expected '"+context+"'("+type+")", this.pos.file, this.pos.line);
+		return this.context;
 	}
 
 	public boolean is(TokenType type){

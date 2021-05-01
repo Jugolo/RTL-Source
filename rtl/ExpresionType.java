@@ -22,5 +22,12 @@ public enum ExpresionType {
 	NOT,
 	AO,
 	POW,
-	ASK
+	ASK,
+	BLOCK,
+	FUNCTION,
+	BITWISE,
+	BITWISEOR,
+	BITWISEAND,
+	BITWISENOT,
+	BITWISEXOR
 }

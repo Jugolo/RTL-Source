@@ -26,6 +26,9 @@ public class Array {
 	}
 
 	public void put(int i, Object context){
-		this.list.add(i, context);
+		if(i == this.size())
+			this.add(context);
+		else
+			this.list.set(i, context);
 	}
 }

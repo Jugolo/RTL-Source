@@ -12,8 +12,9 @@ public enum StatmentType {
 	IF,
 	STRUCT,
 	GLOBAL,
+	CONST,
 	FOR,
 	ELSE,
 	BREAK,
-	CONTINUE
+	CONTINUE,
 }

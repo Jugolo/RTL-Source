@@ -11,11 +11,18 @@ public class Main {
 			System.out.println("Failed to run the program. Reason: No args to file");
 			return;
 		}
+		
+		ProgramData pd = new ProgramData();
+		int fileIndex = 0;
+		if(args[fileIndex].equals("@test") && args.length > fileIndex+1){
+			fileIndex++;
+			pd.test = true;
+		}
 
-		boolean wait = args[0].indexOf("file://") == 0;
+		boolean wait = args[fileIndex].indexOf("file://") == 0;
 
-		int pos = args[0].lastIndexOf(".");
-		if(pos == -1 || !args[0].substring(pos+1).equals("rts")){
+		int pos = args[fileIndex].lastIndexOf(".");
+		if(pos == -1 || !args[fileIndex].substring(pos+1).equals("rts")){
 			System.out.println("Unknown file prototcol. Only accept .rts");
 			if(wait)
 				System.console().readLine();
@@ -23,19 +30,19 @@ public class Main {
 		}
 
 		if(wait){
-			args[0] = args[0].substring(7);
+			args[fileIndex] = args[fileIndex].substring(7);
 		}
 
 		//okay let get the file and see what happens
-		File programCode = new File(args[0]);
+		File programCode = new File(args[fileIndex]);
 		if(!programCode.exists()){
 			System.out.println("Failed to locate the file. Please controle the path");
 			if(wait)
 				System.console().readLine();
 			return;
 		}
-
-        Program program = new Program(programCode.getParent());
+        pd.root = programCode.getParent();
+        Program program = new Program(pd);
 
 		try{
 		  VariabelDatabase db = new VariabelDatabase();

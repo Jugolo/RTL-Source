@@ -16,16 +16,8 @@ public class Function {
 	}
 
 	public Object call(Program program, Object[] arg) throws RTLRuntimeException{
-		if(this.arg.count() > arg.length)
-			throw new RTLRuntimeException(this.name+" got to few arguments");
-
- 		VariabelDatabase db = new VariabelDatabase();
- 		for(int i=0;i<this.arg.count();i++){
- 			db.get(this.arg.getName(i)).put(arg[i]);
- 		}
-
+		VariabelDatabase db = new VariabelDatabase();
  		db.setLast(this.proto);
-		
-		return this.callable.onCall(program, arg, db);
+		return this.callable.onCall(program, this.arg.set(this, arg, db), db);
 	}
 }

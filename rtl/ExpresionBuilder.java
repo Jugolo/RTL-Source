@@ -29,9 +29,10 @@ public class ExpresionBuilder {
 
 	private static Expresion assign(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = AO(token);
-		if(token.current().is(TokenType.PUNCTOR, "=")){
+		if(token.current().is(TokenType.PUNCTOR, new String[]{"=", "|=", "+=", "-="})){
 			Expresion buffer = new Expresion(ExpresionType.ASSIGN);
 			buffer.left = exp;
+			buffer.str = token.current().context();
 			token.next();
 			buffer.right = assign(token);
 			return buffer;
@@ -53,13 +54,62 @@ public class ExpresionBuilder {
 	}
 
 	private static Expresion compare(Tokenizer token) throws RTLInterprenterException{
-		Expresion exp = getSizeCompare(token);
+		Expresion exp = bitwiseor(token);
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"==", "!="})){
 			Expresion buffer = new Expresion(ExpresionType.COMPARE);
 			buffer.left = exp;
 			buffer.str = token.current().context();
 			token.next();
 			buffer.right = compare(token);
+			return buffer;
+		}
+		return exp;
+	}
+	
+	private static Expresion bitwiseor(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = bitwisexor(token);
+		if(token.current().is(TokenType.PUNCTOR, "|")){
+			token.next();
+			Expresion buffer = new Expresion(ExpresionType.BITWISEOR);
+			buffer.left = exp;
+			buffer.right = bitwiseor(token);
+			return buffer;
+		}
+		return exp;
+	}
+	
+	private static Expresion bitwisexor(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = bitwiseand(token);
+		if(token.current().is(TokenType.PUNCTOR, "^")){
+			token.next();
+			Expresion buffer = new Expresion(ExpresionType.BITWISEXOR);
+			buffer.left = exp;
+			buffer.right = bitwisexor(token);
+			return buffer;
+		}
+		return exp;
+	}
+	
+	private static Expresion bitwiseand(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = bitwise(token);
+		if(token.current().is(TokenType.PUNCTOR, "&")){
+			token.next();
+			Expresion buffer = new Expresion(ExpresionType.BITWISEAND);
+			buffer.left = exp;
+			buffer.right = bitwiseand(token);
+			return buffer;
+		}
+		return exp;
+	}
+	
+	private static Expresion bitwise(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = getSizeCompare(token);
+		if(token.current().is(TokenType.PUNCTOR, new String[]{"<<", ">>", ">>>"})){
+			Expresion buffer = new Expresion(ExpresionType.BITWISE);
+			buffer.left = exp;
+			buffer.str = token.current().context();
+			token.next();
+			buffer.right = bitwise(token);
 			return buffer;
 		}
 		return exp;
@@ -93,7 +143,7 @@ public class ExpresionBuilder {
 
 	private static Expresion getPow(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = getPrefix(token);
-		if(token.current().is(TokenType.PUNCTOR, new String[]{"*", "/", "^"})){
+		if(token.current().is(TokenType.PUNCTOR, new String[]{"*", "/"})){
 			Expresion buffer = new Expresion(ExpresionType.POW);
 			buffer.left = exp;
 			buffer.str = token.current().context();
@@ -126,11 +176,24 @@ public class ExpresionBuilder {
 			exp.left = getPrimary(token);
 			return exp;
 		}
+		
+		if(token.current().is(TokenType.PUNCTOR, "~")){
+			Expresion exp = new Expresion(ExpresionType.BITWISENOT);
+			token.next();
+			exp.left = getPrimary(token);
+			return exp;
+		}
 
 		return getPrimary(token);
 	}
 
 	private static Expresion getPrimary(Tokenizer token) throws RTLInterprenterException{
+		if(token.current().is(TokenType.PUNCTOR, "{")){
+			Expresion exp = new Expresion(ExpresionType.BLOCK);
+			exp.block = ProgramBuilder.getBody(token);
+			return handleAfterIdentify(exp, token);
+		}
+		
 		TokenBuffer buffer = token.current();
 		token.next();
 
@@ -179,6 +242,9 @@ public class ExpresionBuilder {
 		if(buffer.is(TokenType.KEYWORD, "null")){
 			return new Expresion(ExpresionType.NULL);
 		}
+
+		if(buffer.is(TokenType.KEYWORD, "function"))
+			return handleAfterIdentify(func(token), token);
 		
 		throw new RTLInterprenterException("Unknown token detected "+buffer.type()+"("+buffer.context()+")");
 	}
@@ -222,6 +288,14 @@ public class ExpresionBuilder {
 		}
 		
 		return before;
+	}
+
+	private static Expresion func(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = new Expresion(ExpresionType.FUNCTION);
+		exp.arg = FunctionUntil.getArg(token);
+		token.next().expect(TokenType.PUNCTOR, "{");
+		exp.block = ProgramBuilder.getBody(token);
+		return exp;
 	}
 
 	private static Expresion[] getArgsCall(Tokenizer token) throws RTLInterprenterException{
