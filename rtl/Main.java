@@ -5,7 +5,7 @@ import rtl.exception.*;
 import java.io.File;
 
 public class Main {
-	public static String VERSION = "V1.0";
+	public static String VERSION = "V1.1";
 	public static void main(String[] args){
 		if(args.length == 0){
 			System.out.println("Failed to run the program. Reason: No args to file");

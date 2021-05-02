@@ -31,6 +31,9 @@ public class CallableArgs {
 	}
 
 	private void controleType(Function function, Object value, String type) throws RTLRuntimeException{
+		if(type == null)
+			return;
+			
 		String nt = TypeConveter.type(value);
 
 		if(nt.equals("structValue") && ((StructValue)value).getName().equals(type))

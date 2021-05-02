@@ -28,9 +28,6 @@ public class LocalPath {
 		    case "rtl.math.rand":
 			rand(db);
 	            break;
-		    case "rtl.math.function":
-			math(db);
-		    break;
 		    case "rtl.typeconveter":
 		    	typeconveter(db);
 		    break;
@@ -70,6 +67,9 @@ public class LocalPath {
 		    break;
 		    case "rtl.test.asset":
 			asset(db);
+		    break;
+		    case "rtl.math.function":
+			math(db);
 		    break;
 		}
 	}
