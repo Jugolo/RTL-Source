@@ -6,5 +6,6 @@ public enum TokenType {
 	KEYWORD,
 	STRING,
 	PUNCTOR,
-	NUMBER
+	NUMBER,
+	HEXNUMBER
 }

@@ -9,11 +9,24 @@ import java.util.ArrayList;
 
 public class ExpresionBuilder {
 	public static Expresion build(Tokenizer token) throws RTLInterprenterException{
-		return ask(token);
+		return assign(token);
 	}
 
+	private static Expresion assign(Tokenizer token) throws RTLInterprenterException{
+		Expresion exp = ask(token);
+		if(token.current().is(TokenType.PUNCTOR, new String[]{"=", "|=", "+=", "-="})){
+			Expresion buffer = new Expresion(ExpresionType.ASSIGN);
+			buffer.left = exp;
+			buffer.str = token.current().context();
+			token.next();
+			buffer.right = assign(token);
+			return buffer;
+		}
+		return exp;
+	}
+	
 	private static Expresion ask(Tokenizer token) throws RTLInterprenterException{
-		Expresion exp = assign(token);
+		Expresion exp = AO(token);
 		if(token.current().is(TokenType.PUNCTOR, "?")){
 			Expresion buffer = new Expresion(ExpresionType.ASK);
 			buffer.test = exp;
@@ -22,19 +35,6 @@ public class ExpresionBuilder {
 			token.current().expect(TokenType.PUNCTOR, ":");
 			token.next();
 			buffer.right = ask(token);
-			return buffer;
-		}
-		return exp;
-	}
-
-	private static Expresion assign(Tokenizer token) throws RTLInterprenterException{
-		Expresion exp = AO(token);
-		if(token.current().is(TokenType.PUNCTOR, new String[]{"=", "|=", "+=", "-="})){
-			Expresion buffer = new Expresion(ExpresionType.ASSIGN);
-			buffer.left = exp;
-			buffer.str = token.current().context();
-			token.next();
-			buffer.right = assign(token);
 			return buffer;
 		}
 		return exp;
@@ -143,7 +143,7 @@ public class ExpresionBuilder {
 
 	private static Expresion getPow(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = getPrefix(token);
-		if(token.current().is(TokenType.PUNCTOR, new String[]{"*", "/"})){
+		if(token.current().is(TokenType.PUNCTOR, new String[]{"*", "/", "%"})){
 			Expresion buffer = new Expresion(ExpresionType.POW);
 			buffer.left = exp;
 			buffer.str = token.current().context();
@@ -220,6 +220,12 @@ public class ExpresionBuilder {
 			exp.str = buffer.context();
 			return exp;
 		}
+		
+		if(buffer.is(TokenType.HEXNUMBER)){
+			Expresion exp = new Expresion(ExpresionType.NUMBER);
+			exp.str = ""+Integer.parseInt(buffer.context(), 16);
+			return exp;
+		}
 
 		if(buffer.is(TokenType.KEYWORD, "struct")){
 			Expresion exp = new Expresion(ExpresionType.STRUCT);
@@ -292,6 +298,10 @@ public class ExpresionBuilder {
 
 	private static Expresion func(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = new Expresion(ExpresionType.FUNCTION);
+		if(token.current().is(TokenType.IDENTIFY)){
+			exp.returnType = token.current().context();
+			token.next();
+		}
 		exp.arg = FunctionUntil.getArg(token);
 		token.next().expect(TokenType.PUNCTOR, "{");
 		exp.block = ProgramBuilder.getBody(token);

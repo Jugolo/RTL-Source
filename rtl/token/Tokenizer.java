@@ -2,7 +2,7 @@ package rtl.token;
 
 import rtl.exception.RTLInterprenterException;
 
-import java.io.FileReader;
+import java.io.Reader;
 
 public class Tokenizer {
 	private TokenReader reader;
@@ -32,7 +32,7 @@ public class Tokenizer {
 		"continue"
 		};
 	
-	public Tokenizer(FileReader reader, String path) throws RTLInterprenterException{
+	public Tokenizer(Reader reader, String path) throws RTLInterprenterException{
 		this.reader = new TokenReader(reader, path);
 		this.next();	
 	}
@@ -66,6 +66,10 @@ public class Tokenizer {
 	}
 
 	private TokenBuffer getNumber(int first) throws RTLInterprenterException{
+		if(first == '0' && this.reader.peek() == 'x'){
+			this.reader.read();
+			return this.getHex();
+		}
 		StringBuilder builder = new StringBuilder();
 		builder.append((char)first);
 		getCleanNumber(builder);
@@ -77,6 +81,18 @@ public class Tokenizer {
 		}
 
 		return this.buffer(TokenType.NUMBER, builder.toString());
+	}
+	
+	private TokenBuffer getHex() throws RTLInterprenterException{
+		int c;
+		String str = "";
+		while((c = this.reader.peek()) >= '0' && c <= '9' || c >= 'A' && c <= 'F' || c >= 'a' && c <= 'f'){
+			str += (char)this.reader.read();
+		}
+		
+		if(str.length() == 0)
+			throw new RTLInterprenterException("After 0x there must be a hex number");
+		return this.buffer(TokenType.HEXNUMBER, str);
 	}
 
 	private boolean getCleanNumber(StringBuilder buffer) throws RTLInterprenterException{
@@ -166,6 +182,8 @@ public class Tokenizer {
 			return this.buffer(TokenType.PUNCTOR, "?");
 		if(c == '~')
 			return this.buffer(TokenType.PUNCTOR, "~");
+		if(c == '%')
+			return this.buffer(TokenType.PUNCTOR, "%");
 		if(c == '&'){
 			if(this.reader.peek() == '&'){
 				this.reader.read();
@@ -253,12 +271,31 @@ public class Tokenizer {
 		int c = this.reader.read();
 		this.pos = new TokenPos(this.reader.getPath(), this.reader.getLine());
 
-        if(c == ' ' || c == '\n' || c == '\t')
+        if(c == ' ' || c == '\n' || c == '\t' || c == '\r')
         	return this.gc();
 
-        if(c == '/' && this.reader.peek() == '/'){
-        	while(this.reader.read() != '\n');
-        	return this.gc();
+        if(c == '/'){
+			if(this.reader.peek() == '/'){
+				while(true){
+					c = this.reader.read();
+					if(c == '\n' || c == -1)
+						return this.gc();
+				}
+		    }
+		    
+		    if(this.reader.peek() == '*'){
+				this.reader.read();
+				while(true){
+					c = this.reader.read();
+					if(c == -1)
+						throw new RTLInterprenterException("Unexpected end of file expected */");
+						
+					if(c == '*' && this.reader.peek() == '/'){
+						this.reader.read();
+						return this.gc();
+					}
+				}
+			}
         }
 		
 		return c;

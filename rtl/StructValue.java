@@ -11,7 +11,7 @@ public class StructValue {
 		this.owner = struct;
 		this.fieldsSize = struct.getSize();
 		this.fields = new StructItem[this.fieldsSize];
-		String[] names = struct.getNames();
+		StructField[] names = struct.getFields();
 		for(int i=0;i<this.fieldsSize;i++){
 			this.fields[i] = new StructItem(names[i]);
 		}
@@ -20,10 +20,10 @@ public class StructValue {
 	public Object get(String name) throws RTLRuntimeException{
 		//if the name is _struct it is not a item its containe.
 		if(name.equals("_struct")){
-			return new rtl.StructDec(this.owner);
+			return new rtl.StructDec(this.owner, this);
 		}
 		for(int i=0;i<this.fieldsSize;i++){
-			if(this.fields[i].name.equals(name))
+			if(this.fields[i].field.name.equals(name))
 				return new StructReference(this.fields[i]);
 		}
 
@@ -32,5 +32,9 @@ public class StructValue {
 
 	public String getName(){
 		return this.owner.getName();
+	}
+	
+	public StructItem[] getFields(){
+		return this.fields;
 	}
 }

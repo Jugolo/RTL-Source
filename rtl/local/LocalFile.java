@@ -57,4 +57,21 @@ public class LocalFile {
         	throw new RTLRuntimeException(e.getMessage());
         }
 	}
+	
+	public long modified(){
+		return new File(this.path).lastModified();
+	}
+	
+	public boolean setLength(long length){
+		try{
+			this.file.setLength(length);
+			return true;
+		}catch(IOException e){
+			return false;
+		}
+	}
+	
+	public boolean delete(){
+		return new File(this.path).delete();
+	}
 }

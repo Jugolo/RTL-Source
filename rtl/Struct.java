@@ -3,11 +3,23 @@ package rtl;
 import rtl.exception.RTLRuntimeException;
 
 public class Struct {
-	private String[] fields;
+	private StructField[] fields;
 	private int size;
 	private String name;
-
+	
 	public Struct(String name, String[] fields){
+		this.size = fields.length;
+		this.name = name;
+		StructField[] buffer = new StructField[this.size];
+		for(int i=0;i<buffer.length;i++){
+			StructField buf = new StructField();
+			buf.name = fields[i];
+			buffer[i] = buf;
+		}
+		this.fields = buffer;
+	}
+
+	public Struct(String name, StructField[] fields){
 		this.size = fields.length;
 		this.fields = fields;
 		this.name = name;
@@ -17,7 +29,7 @@ public class Struct {
 		return this.size;
 	}
 
-	public String[] getNames(){
+	public StructField[] getFields(){
 		return this.fields;
 	}
 

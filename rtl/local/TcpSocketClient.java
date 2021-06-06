@@ -2,23 +2,24 @@ package rtl.local;
 
 import java.net.Socket;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.BufferedWriter;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import rtl.exception.RTLRuntimeException;
 
 public class TcpSocketClient {
 	private Socket socket;
-	private BufferedReader reader;
+	private InputStream reader;
 	private OutputStream writer;
 	public String errmsg = "<noerror>";
 
 	public TcpSocketClient(Socket socket) throws RTLRuntimeException{
 		this.socket = socket;
 		try{
-			this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			this.reader = socket.getInputStream();
 			this.writer = socket.getOutputStream();
 		}catch(IOException e){
 			throw new RTLRuntimeException(e.getMessage());
@@ -27,7 +28,16 @@ public class TcpSocketClient {
 
 	public String readLine() throws RTLRuntimeException{
 		try{
-			return this.reader.readLine();
+			String line = "";
+			int c;
+			while((c = this.reader.read()) != -1){
+				if(c == '\r')
+					continue;
+				if(c == '\n')
+					return line;
+				line += (char)c;
+			}
+			return line;
 		}catch(IOException e){
 			this.errmsg = e.getMessage();
 			return null;
@@ -45,14 +55,14 @@ public class TcpSocketClient {
 	}
 
 	public String readLength(int length) throws RTLRuntimeException{
-		char[] buffer = new char[length];
+		byte[] buffer = new byte[length];
 		try{
 			this.reader.read(buffer, 0, length);
 		}catch(IOException e){
 			this.errmsg = e.getMessage();
 			return null;
 		}
-		return new String(buffer);
+		return new String(buffer, StandardCharsets.UTF_8);
 	}
 
 	public boolean writeln(String message) throws RTLRuntimeException{
@@ -102,6 +112,26 @@ public class TcpSocketClient {
 		}catch(IOException e){
 			this.errmsg = e.getMessage();
 			return false;
+		}
+	}
+	
+	public boolean ready(){
+		try{
+			return this.reader.available() > 0;
+		}catch(IOException e){
+			this.errmsg = e.getMessage();
+			return false;
+		}
+	}
+	
+	public byte readByte(){
+		try{
+			byte[] b = new byte[1];
+			this.reader.read(b);
+			return b[0];
+		}catch(IOException e){
+			this.errmsg = e.getMessage();
+			return 0;
 		}
 	}
 }

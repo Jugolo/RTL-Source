@@ -4,7 +4,8 @@ public class Statment {
 	public StatmentType type;
 	public Expresion expresion;//for expresions
 	public Expresion[] expresions;
-	public String name;//for names example function names and so on. 
+	public String name;//for names example function names and so on.
+	public String returnType;
 	public CallableArgs arg;
 	public Statment[] body;
 	public Statment after;
@@ -12,6 +13,7 @@ public class Statment {
 	public ForData forData;
 	public boolean isGlobal = false;
 	public boolean isConst = false;
+	public StructField[] struct;
 
 	public final int line;
 	public final String file;

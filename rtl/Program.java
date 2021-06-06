@@ -2,6 +2,7 @@ package rtl;
 
 import rtl.Statment;
 import rtl.exception.*;
+import rtl.local.LocalFile;
 
 import java.util.ArrayList;
 import java.io.File;
@@ -27,7 +28,10 @@ public class Program{
 		//from version 1.1
 		"rtl.db.mysql",
 		"rtl.error",
-		"rtl.test.asset"
+		"rtl.test.asset",
+		//from version 1.2
+		"rtl.encode.base64",
+		"rtl.script"
 	};
 
 	public Program(ProgramData data){
@@ -117,11 +121,11 @@ public class Program{
 				this.popPos();
 				return Complication.normal();
 			case INCLUDE:
-				c = getProgram(TypeConveter.string(statment.expresion.get(this, db)), db, statment.file, statment.line);
+				c = getProgram(getIncludePath(Reference.toValue(statment.expresion.get(this, db))), db, statment.file, statment.line);
 				this.popPos();
 				return c;
 			case FUNCTION:
-			    Function func = FunctionUntil.getCallable(statment.name, db, statment.arg, statment.body);
+			    Function func = FunctionUntil.getCallable(statment.name, statment.returnType, db, statment.arg, statment.body);
 				ref = db.get(statment.name);
 				ref.put(func);
 				ref.attribute(VariabelAttribute.NOT_WRITE);
@@ -195,7 +199,7 @@ public class Program{
 				return c;
 			case STRUCT:
 				ref = db.get(statment.name);
-				ref.put(new Struct(statment.name, statment.context));
+				ref.put(new Struct(statment.name, statment.struct));
 				ref.attribute(VariabelAttribute.NOT_WRITE | VariabelAttribute.GLOBAL);
 				v = ref.toValue();
 				this.popPos();
@@ -247,6 +251,13 @@ public class Program{
 		}
 
 		return Complication.normal();
+	}
+	
+	private String getIncludePath(Object o) throws RTLRuntimeException{
+		if(o instanceof LocalFile){
+			return ((LocalFile)o).getPath();
+		}
+		return TypeConveter.string(o);
 	}
 
 	private Complication getProgram(String path, VariabelDatabase db, String file, int line) throws RTLRuntimeException{

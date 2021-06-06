@@ -2,15 +2,15 @@ package rtl.token;
 
 import rtl.exception.RTLInterprenterException;
 
-import java.io.FileReader;
+import java.io.Reader;
 
 public class TokenReader {
-	private FileReader reader;
+	private Reader reader;
 	private String path;
 	private int buffer = -1;
 	private int line = 1;
 
-	public TokenReader(FileReader reader, String path){
+	public TokenReader(Reader reader, String path){
 		this.path = path;
 		this.reader = reader;
 	}

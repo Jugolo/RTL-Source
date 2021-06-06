@@ -52,4 +52,15 @@ public class RTLMath{
 		
 		return (double)l / TypeConveter.toDouble(r);
 	}
+	
+	public static Object modus(Object l, Object r) throws RTLRuntimeException{
+		if(!TypeConveter.isNumber(l) || !TypeConveter.isNumber(r))
+			throw new RTLRuntimeException("Cant use the sign % on non numric value");
+			
+		if(l instanceof Integer)
+			return (int)l % TypeConveter.toInt(r);
+		if(l instanceof Long)
+			return (long)l % TypeConveter.toLong(r);
+		return (double)l % TypeConveter.toDouble(r);
+	}
 }

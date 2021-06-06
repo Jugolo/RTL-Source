@@ -6,11 +6,19 @@ import rtl.exception.RTLInterprenterException;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 
 public class ProgramBuilder {
-	public static ProgramInstruc build(File file) throws java.io.FileNotFoundException, rtl.exception.RTLInterprenterException{
-		Tokenizer token = new Tokenizer(new FileReader(file), file.getAbsolutePath());
+	public static ProgramInstruc build(String code) throws RTLInterprenterException{
+		return eval(new Tokenizer(new StringReader(code), "<inline>"));
+	}
+	
+	public static ProgramInstruc build(File file) throws java.io.FileNotFoundException, RTLInterprenterException{
+		return eval(new Tokenizer(new FileReader(file), file.getAbsolutePath()));
+	}
+	
+	private static ProgramInstruc eval(Tokenizer token) throws RTLInterprenterException{ 
 		ProgramInstruc instruct = new ProgramInstruc();
 		while(!token.current().is(TokenType.EOS)){
 			instruct.add(getNextStatment(token));
@@ -136,16 +144,26 @@ public class ProgramBuilder {
 		token.next().expect(TokenType.IDENTIFY);
 		statment.name = token.current().context();
 		token.next().expect(TokenType.PUNCTOR, "{");
-		ArrayList<String> buffer = new ArrayList<String>();
-		while(token.next().is(TokenType.IDENTIFY)){
-			buffer.add(token.current().context());
+		ArrayList<StructField> buffer = new ArrayList<StructField>();
+		while(!token.next().is(TokenType.PUNCTOR, "}")){
+			StructField field = new StructField();
+			if(token.current().is(TokenType.KEYWORD, "const")){
+				field.isConst = true;
+				token.next();
+			}
+			
+			field.name = token.current().expect(TokenType.IDENTIFY);
+			buffer.add(field);
 			if(!token.next().is(TokenType.PUNCTOR, ","))
 				break;
 		}
 
 		token.current().expect(TokenType.PUNCTOR, "}");
 		token.next();
-		statment.context = toStringArray(buffer);
+		StructField[] buf = new StructField[buffer.size()];
+		for(int i=0;i<buf.length;i++)
+			buf[i] = buffer.get(i);
+		statment.struct = buf;
 		return statment;
 	}
 
@@ -201,8 +219,13 @@ public class ProgramBuilder {
 
 	private static Statment function(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.FUNCTION, token.current().file(), token.current().line());
-		statment.name = token.next().expect(TokenType.IDENTIFY);
-		token.next();
+		String name = token.next().expect(TokenType.IDENTIFY);
+		if(token.next().is(TokenType.IDENTIFY)){
+			statment.name = token.current().context();
+			statment.returnType = name;
+			token.next();
+		}else
+			statment.name = name;
 		statment.arg = FunctionUntil.getArg(token);
 		token.next().expect(TokenType.PUNCTOR, "{");
 		statment.body = getBody(token);

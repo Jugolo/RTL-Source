@@ -24,6 +24,8 @@ public class TypeConveter {
 			return "structValue";
 		if(obj instanceof Array)
 			return "array";
+		if(obj instanceof Byte)
+			return "byte";
 		//return obj.getClass().getName();
 		return "undefined";
 	}
@@ -57,6 +59,8 @@ public class TypeConveter {
 			return (int)Math.round((double)obj);
 		if(obj instanceof Long)
 			return (int)((long)obj);
+		if(obj instanceof Byte)
+			return Byte.toUnsignedInt((byte)obj);
 			
 		throw new RTLRuntimeException("Cant convert "+type(obj)+" to int");
 	}
@@ -106,8 +110,20 @@ public class TypeConveter {
 			
 		if(obj instanceof Long)
 			return ((long)obj)+"";
+			
+		if(obj instanceof Byte)
+			return ((byte)obj)+"";
 
 		throw new RTLRuntimeException("Cant convert "+type(obj)+" to string");
+	}
+	
+	public static byte toByte(Object obj) throws RTLRuntimeException{
+		if(obj instanceof Byte)
+			return (byte)obj;
+			
+		if(obj instanceof Integer)
+			return ((Integer)obj).byteValue();
+		throw new RTLRuntimeException("Cant convert "+type(obj)+" to byte");
 	}
 
 	public static Function toFunction(Object obj) throws RTLRuntimeException{

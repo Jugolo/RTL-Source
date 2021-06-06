@@ -5,6 +5,7 @@ import rtl.exception.RTLRuntimeException;
 public class Expresion {
 	public ExpresionType type;
 	public String str;
+	public String returnType;
 	public Expresion test;
 	public Expresion left;
 	public Expresion right;
@@ -113,10 +114,10 @@ public class Expresion {
 			case NPC:
 				Object npc = Reference.toValue(this.left.get(program, db));
 				if(npc instanceof Integer)
-					return this.str.equals("+") ? +((int)npc) : -((int)npc);
+					return this.str.equals("+") ? +TypeConveter.toInt(npc) : -TypeConveter.toInt(npc);
 				if(npc instanceof Double)
-					return this.str.equals("+") ? +((double)npc) : -((int)npc);
-				return this.str.equals("+") ? +((long)npc) : -((long)npc);
+					return this.str.equals("+") ? +TypeConveter.toDouble(npc) : -TypeConveter.toDouble(npc);
+				return this.str.equals("+") ? +TypeConveter.toLong(npc) : -TypeConveter.toDouble(npc);
 			case NOT:
 				return !TypeConveter.bool(Reference.toValue(this.left.get(program, db)));
 			case AO:
@@ -126,6 +127,8 @@ public class Expresion {
 			case POW:
 				if(this.str.equals("*"))
 					return RTLMath.additiv(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
+				if(this.str.equals("%"))
+					return RTLMath.modus(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
 				return RTLMath.subtiv(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
 			case ASK: 
 				if(TypeConveter.bool(Reference.toValue(this.test.get(program, db))))
@@ -143,7 +146,7 @@ public class Expresion {
 					throw new RTLRuntimeException("Continue cant be used outsite a block");
 				return null;
 			case FUNCTION:
-				return FunctionUntil.getCallable("<inline>", db, this.arg, this.block);
+				return FunctionUntil.getCallable("<inline>", this.returnType, db, this.arg, this.block);
 			case BITWISE:
 			    if(this.str.equals(">>"))
 					return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) >> TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
