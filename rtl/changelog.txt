@@ -1,0 +1,17 @@
+--New--
+Append the time function 'date' Some take argument and convete it to TIME struct
+Program.isFinish() tells if the script is done and ready to be closed.
+Progran.close() close the program and if it still running stop it.
+Array can now be converted to StructValue. It containe a field 'length' there tell how many item there are.
+The script now support native java as plugin.
+Indentify can now containe $ in there name
+Struct can now assign value. struct TEST{one = 1, two = 2} and so on
+When create new StructValue you can chose to give it arguemtns like function call test = struct TEST(1, 2, 3);
+When define a struct you can chose to make a constructor '$construct'. When you try to create a struct value it will try to get a function out of this value and call it. 
+String can now bew converted to StructValue. It containe a field 'length' there tell how many char there are in the string
+When create a new StructValue you can  now put value in each field. You onlye need to do: struct STRUCTS{one=two, tree=four};
+When no file is given in the console. it will look after index.rts
+--bugfix--
+include file stream not working properly.
+dir allow acces outsite the base dir. 
+structfield not access outsite its packge. 
