@@ -1,6 +1,7 @@
 package rtl;
 
-class StructField{
+public class StructField{
 	public boolean isConst = false;
 	public String name;
+	public Object context;
 }

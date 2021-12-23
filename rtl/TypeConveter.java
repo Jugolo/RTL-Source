@@ -1,33 +1,34 @@
 package rtl;
 
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.*;
+import rtl.nativestruct.StringStruct;
 
 public class TypeConveter {
-	public static String type(Object obj){
+	public static RTLType type(Object obj){
 		if(obj == null)
-			return "null";
+			return RTLType.NULL;
 		if(obj instanceof String)
-			return "string";
+			return RTLType.STRING;
 		if(obj instanceof Boolean)
-			return "bool";
+			return RTLType.BOOL;
 		if(obj instanceof Function)
-			return "function";
+			return RTLType.FUNCTION;
 		if(obj instanceof Integer)
-			return "number";
+			return RTLType.NUMBER;
 		if(obj instanceof Double)
-			return "number";
+			return RTLType.NUMBER;
 		if(obj instanceof Long)
-			return "number";
+			return RTLType.NUMBER;
 		if(obj instanceof Struct)
-			return "struct";
+			return RTLType.STRUCT;
 		if(obj instanceof StructValue)
-			return "structValue";
+			return RTLType.STRUCTVALUE;
 		if(obj instanceof Array)
-			return "array";
+			return RTLType.ARRAY;
 		if(obj instanceof Byte)
-			return "byte";
+			return RTLType.BYTE;
 		//return obj.getClass().getName();
-		return "undefined";
+		return RTLType.UNDEFINED;
 	}
 
 	public static boolean isNumber(Object obj){
@@ -37,19 +38,31 @@ public class TypeConveter {
 	public static Array array(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Array)
 			return (Array)obj;
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to array");
+		wrongType(obj, "array");
+		return null;
 	}
 
 	public static Struct toStruct(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Struct)
 			return (Struct)obj;
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to struct");
+		wrongType(obj, "struct");
+		return null;
 	}
 
-	public static StructValue toStructValue(Object obj) throws RTLRuntimeException{
+	public static StructValue toStructValue(Object obj, Program program) throws RTLException{
 		if(obj instanceof StructValue)
 			return (StructValue)obj;
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to structValue");
+		if(obj instanceof Array)
+			return ((Array)obj).toStructValue(program);
+		if(obj instanceof String){
+			String str = (String)obj;
+			StructValue value = new StructValue(new StringStruct(), program, new Object[0]);
+			((StructReference)value.get("length", program)).put(str.length());
+			return value;
+		}
+			
+		wrongType(obj, "structValue");
+		return null;
 	}
 
 	public static int toInt(Object obj) throws RTLRuntimeException{
@@ -62,7 +75,8 @@ public class TypeConveter {
 		if(obj instanceof Byte)
 			return Byte.toUnsignedInt((byte)obj);
 			
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to int");
+		wrongType(obj, "int");
+		return -1;
 	}
 
 	public static double toDouble(Object obj) throws RTLRuntimeException{
@@ -73,7 +87,8 @@ public class TypeConveter {
 		if(obj instanceof Long)
 			return (double)((long)obj);
 			
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to double");
+		wrongType(obj, "double");
+		return -1.0;
 	}
 
 	public static long toLong(Object obj) throws RTLRuntimeException{
@@ -84,13 +99,16 @@ public class TypeConveter {
 		if(obj instanceof Long)
 			return (long)obj;
 			
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to long");
+		wrongType(obj, "long");
+		return -1;
 	}
 
 	public static boolean bool(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Boolean)
 			return (boolean)obj;
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to bool");
+			
+		wrongType(obj, "bool");
+		return false;
 	}
 	
 	public static String string(Object obj) throws RTLRuntimeException{
@@ -114,7 +132,8 @@ public class TypeConveter {
 		if(obj instanceof Byte)
 			return ((byte)obj)+"";
 
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to string");
+		wrongType(obj, "string");
+		return null;
 	}
 	
 	public static byte toByte(Object obj) throws RTLRuntimeException{
@@ -123,13 +142,20 @@ public class TypeConveter {
 			
 		if(obj instanceof Integer)
 			return ((Integer)obj).byteValue();
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to byte");
+			
+		wrongType(obj, "byte");
+		return 0;
 	}
 
 	public static Function toFunction(Object obj) throws RTLRuntimeException{
 		if(obj instanceof Function)
 			return (Function)obj;
 			
-		throw new RTLRuntimeException("Cant convert "+type(obj)+" to function");
+		wrongType(obj, "function");
+		return null;
+	}
+	
+	private static void wrongType(Object given, String to) throws RTLRuntimeException{
+		throw new RTLRuntimeException("Cant convert "+type(given).toString()+" to "+to);
 	}
 }

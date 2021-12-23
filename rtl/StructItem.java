@@ -7,5 +7,9 @@ public class StructItem {
 
 	public StructItem(StructField field){
 		this.field = field;
+		if(field.context != null){
+			this.value = field.context;
+			this.hasSet = true;
+		}
 	}
 }

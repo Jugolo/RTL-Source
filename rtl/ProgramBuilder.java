@@ -82,18 +82,25 @@ public class ProgramBuilder {
 		ForData data = new ForData();
 		if(!token.next().is(TokenType.PUNCTOR, ";")){
 			data.first = ExpresionBuilder.build(token);
+		}else{
+			data.first = new Expresion(ExpresionType.NULL);
 		}
 
 		token.current().expect(TokenType.PUNCTOR, ";");
 
 		if(!token.next().is(TokenType.PUNCTOR, ";")){
 			data.second = ExpresionBuilder.build(token);
+		}else{
+			data.second = new Expresion(ExpresionType.BOOL);
+			data.second.str = "true";
 		}
 
 		token.current().expect(TokenType.PUNCTOR, ";");
 
 		if(!token.next().is(TokenType.PUNCTOR, ")")){
 			data.last = ExpresionBuilder.build(token);
+		}else{
+			data.last = new Expresion(ExpresionType.NULL);
 		}
 
 		token.current().expect(TokenType.PUNCTOR, ")");
@@ -153,8 +160,14 @@ public class ProgramBuilder {
 			}
 			
 			field.name = token.current().expect(TokenType.IDENTIFY);
+			
+			if(token.next().is(TokenType.PUNCTOR, "=")){
+				token.next();
+				field.context = ExpresionBuilder.build(token);
+			}
+			
 			buffer.add(field);
-			if(!token.next().is(TokenType.PUNCTOR, ","))
+			if(!token.current().is(TokenType.PUNCTOR, ","))
 				break;
 		}
 

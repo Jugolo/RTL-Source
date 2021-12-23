@@ -1,12 +1,12 @@
 package rtl;
 
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.*;
 
 public class StructDec extends StructValue{
     private StructValue current;
     
-	public StructDec(Struct value, StructValue current){
-		super(value);
+	public StructDec(Struct value, StructValue current, Program program) throws RTLException{
+		super(value, program, new Object[0]);
 		this.current = current;
 	}
 

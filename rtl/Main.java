@@ -5,18 +5,34 @@ import rtl.exception.*;
 import java.io.File;
 
 public class Main {
-	public static String VERSION = "V1.2";
+	public static String VERSION = "V2.0";
 	public static void main(String[] args){
 		if(args.length == 0){
-			System.out.println("Failed to run the program. Reason: No args to file");
-			return;
+			args = new String[]{
+				"index.rts"
+			};
 		}
 		
 		ProgramData pd = new ProgramData();
+		
 		int fileIndex = 0;
-		if(args[fileIndex].equals("@test") && args.length > fileIndex+1){
-			fileIndex++;
-			pd.test = true;
+		boolean profile = false;
+		long time = 0l;
+		
+		while(true){
+			if(args.length > fileIndex+1){
+				if(args[fileIndex].equals("@test")){
+					fileIndex++;
+					pd.test = true;
+				}else if(args[fileIndex].equals("@profile")){
+					fileIndex++;
+					profile = true;
+				}else{
+					break;
+				}
+			}else{
+				break;
+			}
 		}
 
 		boolean wait = args[fileIndex].indexOf("file://") == 0;
@@ -46,6 +62,8 @@ public class Main {
 
 		try{
 		  VariabelDatabase db = new VariabelDatabase();
+		  if(profile)
+			time = System.nanoTime();
 		  program.run(ProgramBuilder.build(programCode), db);
 		}catch(RTLInterprenterException e){
 			System.err.println("Compile exception");
@@ -60,6 +78,10 @@ public class Main {
 			System.err.println("---");
 			e.printStackTrace();
 		}
+		
+		if(profile)
+			System.out.println("Profile: "+(time-System.nanoTime()));
+		
 		if(wait)
 			System.console().readLine();
 	}

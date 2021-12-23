@@ -55,10 +55,12 @@ class RTLCompare{
 		if(l == null || r == null)
 			return l == r;
 	    
-	    if(!TypeConveter.type(l).equals(TypeConveter.type(r)))
+	    RTLType lt = TypeConveter.type(l);
+	    
+	    if(lt != TypeConveter.type(r))
 			return false;
 				
-		if(TypeConveter.isNumber(l)){
+		if(lt == RTLType.NUMBER){
 			if(l instanceof Integer)
 				return (int)l == TypeConveter.toInt(r);
 			

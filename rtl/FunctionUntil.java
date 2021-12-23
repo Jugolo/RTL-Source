@@ -2,14 +2,14 @@ package rtl;
 
 import rtl.token.Tokenizer;
 import rtl.token.TokenType;
-import rtl.exception.RTLInterprenterException;
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.*;
 
 public class FunctionUntil {
-	public static Function getCallable(String name, String returnType, VariabelDatabase db, CallableArgs arg, Statment[] body){
+	public static Function getCallable(String name, String returnType, VariabelDatabase db, CallableArgs arg, Statment[] body) throws RTLException{
+		ProgramInstrucList list = new ProgramInstrucList(body);
 		return new Function(name, returnType, db, arg, new ICallable(){
-			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
-				Complication c = program.run(new ProgramInstrucList(body), db);
+			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLException{
+				Complication c = program.getProgramEvoluator().run(list, db);
 				if(c.type() == ComplicationType.RETURN)
 					return c.value();
 				return null;

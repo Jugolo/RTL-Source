@@ -12,12 +12,27 @@ public class ExpresionBuilder {
 		return assign(token);
 	}
 
+    private static EXPSign getAssingSign(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "=":
+				return EXPSign.ASSIGN;
+			case "|=":
+				return EXPSign.BITWISE_ASSIGN;
+			case "+=":
+				return EXPSign.PLUS_ASSIGN;
+			case "-=":
+				return EXPSign.MINUS_ASSIGN;
+		}
+		
+		throw new RTLInterprenterException("Unknown assign sign: "+sign);
+	}
+
 	private static Expresion assign(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = ask(token);
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"=", "|=", "+=", "-="})){
 			Expresion buffer = new Expresion(ExpresionType.ASSIGN);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = getAssingSign(token.current().context());
 			token.next();
 			buffer.right = assign(token);
 			return buffer;
@@ -45,7 +60,7 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"&&", "||"})){
 			Expresion buffer = new Expresion(ExpresionType.AO);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = token.current().context().equals("&&") ? EXPSign.AND : EXPSign.OR;
 			token.next();
 			buffer.right = AO(token);
 			return buffer;
@@ -58,7 +73,7 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"==", "!="})){
 			Expresion buffer = new Expresion(ExpresionType.COMPARE);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = token.current().context().equals("==") ? EXPSign.EQUAL : EXPSign.NOT_EQUAL;
 			token.next();
 			buffer.right = compare(token);
 			return buffer;
@@ -102,17 +117,43 @@ public class ExpresionBuilder {
 		return exp;
 	}
 	
+	private static EXPSign getBitwiseSign(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "<<":
+				return EXPSign.SIGN_L;
+			case ">>":
+				return EXPSign.SIGN_R;
+			case ">>>":
+				return EXPSign.UNSIGN_R;
+		}
+		throw new RTLInterprenterException("Unknown bitwise sign: "+sign);
+	}
+	
 	private static Expresion bitwise(Tokenizer token) throws RTLInterprenterException{
 		Expresion exp = getSizeCompare(token);
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"<<", ">>", ">>>"})){
 			Expresion buffer = new Expresion(ExpresionType.BITWISE);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = getBitwiseSign(token.current().context());
 			token.next();
 			buffer.right = bitwise(token);
 			return buffer;
 		}
 		return exp;
+	}
+	
+	private static EXPSign getSizeSign(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "<":
+				return EXPSign.CREATER;
+			case ">":
+				return EXPSign.LESS;
+			case "<=":
+				return EXPSign.CREATER_EQUAL;
+			case ">=":
+				return EXPSign.LESS_EQUAL;
+		}
+		throw new RTLInterprenterException("Unknown size sign: "+sign);
 	}
 
 	private static Expresion getSizeCompare(Tokenizer token) throws RTLInterprenterException{
@@ -120,12 +161,22 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"<", ">", "<=", ">="})){
 			Expresion buffer = new Expresion(ExpresionType.SIZE);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = getSizeSign(token.current().context());
 			token.next();
 			buffer.right = getSizeCompare(token);
 			return buffer;
 		}
 		return exp;
+	}
+	
+	private static EXPSign getMathSize(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "+":
+				return EXPSign.PLUS;
+			case "-":
+				return EXPSign.MINUS;
+		}
+		throw new RTLInterprenterException("Unknown math sign: "+sign);
 	}
 
 	private static Expresion getMath(Tokenizer token) throws RTLInterprenterException{
@@ -133,12 +184,24 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"+", "-"})){
 			Expresion buffer = new Expresion(ExpresionType.MATH);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = getMathSize(token.current().context());
 			token.next();
 			buffer.right = getMath(token);
 			return buffer;
 		}
 		return exp;
+	}
+	
+	private static EXPSign getPowSign(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "*":
+				return EXPSign.GANGE;
+			case "/":
+				return EXPSign.DIV;
+			case "%":
+				return EXPSign.MOD;
+		}
+		throw new RTLInterprenterException("Unknown pow sign: "+sign);
 	}
 
 	private static Expresion getPow(Tokenizer token) throws RTLInterprenterException{
@@ -146,12 +209,22 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"*", "/", "%"})){
 			Expresion buffer = new Expresion(ExpresionType.POW);
 			buffer.left = exp;
-			buffer.str = token.current().context();
+			buffer.sign = getPowSign(token.current().context());
 			token.next();
 			buffer.right = getPow(token);
 			return buffer;
 		}
 		return exp;
+	}
+	
+	private static EXPSign getPrefixSign(String sign) throws RTLInterprenterException{
+		switch(sign){
+			case "+":
+				return EXPSign.PLUS;
+			case "-":
+				return EXPSign.MINUS;
+		}
+		throw new RTLInterprenterException("Unknown prefix sign: "+sign);
 	}
 
 	private static Expresion getPrefix(Tokenizer token) throws RTLInterprenterException{
@@ -164,7 +237,7 @@ public class ExpresionBuilder {
 
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"-", "+"})){
 			Expresion exp = new Expresion(ExpresionType.NPC);
-			exp.str = token.current().context();
+			exp.sign = getPrefixSign(token.current().context());
 			token.next();
 			exp.left = getPrimary(token);
 			return exp;
@@ -211,7 +284,7 @@ public class ExpresionBuilder {
 
 		if(buffer.is(TokenType.KEYWORD, new String[]{"true", "false"})){
 			Expresion exp = new Expresion(ExpresionType.BOOL);
-			exp.str = buffer.context();
+			exp.sign = buffer.context().equals("true") ? EXPSign.TRUE : EXPSign.FALSE;
 			return exp;
 		}
 
@@ -231,7 +304,13 @@ public class ExpresionBuilder {
 			Expresion exp = new Expresion(ExpresionType.STRUCT);
 			token.current().expect(TokenType.IDENTIFY);
 			exp.str = token.current().context();
-			token.next();
+			if(token.next().is(TokenType.PUNCTOR, "(")){
+				token.next();
+				exp.list = getArgsCall(token);
+			}
+			
+			if(token.current().is(TokenType.PUNCTOR, "{"))
+				getStructItem(exp, token);
 			return exp;
 		}
 
@@ -253,6 +332,25 @@ public class ExpresionBuilder {
 			return handleAfterIdentify(func(token), token);
 		
 		throw new RTLInterprenterException("Unknown token detected "+buffer.type()+"("+buffer.context()+")");
+	}
+	
+	private static void getStructItem(Expresion exp, Tokenizer token) throws RTLInterprenterException{
+		if(!token.next().is(TokenType.PUNCTOR, "}")){
+			getStructSingleItem(exp, token);
+			while(token.current().is(TokenType.PUNCTOR, ",")){
+				token.next();
+				getStructSingleItem(exp, token);
+			}
+			token.current().expect(TokenType.PUNCTOR, "}");
+		}
+		token.next();
+	}
+	
+	private static void getStructSingleItem(Expresion exp, Tokenizer token) throws RTLInterprenterException{
+		String name = token.current().expect(TokenType.IDENTIFY);
+		token.next().expect(TokenType.PUNCTOR, "=");
+		token.next();
+		exp.structArgs.put(name, build(token));
 	}
 
 	private static Expresion handleAfterIdentify(Expresion before, Tokenizer token) throws RTLInterprenterException{
@@ -288,7 +386,7 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, new String[]{"++", "--"})){
 			Expresion exp = new Expresion(ExpresionType.SELF_INC);
 			exp.left = before;
-			exp.str = token.current().context();
+			exp.sign = token.current().context().equals("++") ? EXPSign.SELF_INC : EXPSign.SELF_DEC;
 			token.next();
 			return exp;
 		}

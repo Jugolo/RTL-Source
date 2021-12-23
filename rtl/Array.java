@@ -1,5 +1,8 @@
 package rtl;
 
+import rtl.exception.*;
+import rtl.nativestruct.ArrayStruct;
+
 import java.util.ArrayList;
 
 public class Array {
@@ -30,5 +33,12 @@ public class Array {
 			this.add(context);
 		else
 			this.list.set(i, context);
+	}
+	
+	public StructValue toStructValue(Program program) throws RTLException{
+		StructValue value = new StructValue(new ArrayStruct(), program, new Object[0]);
+		((StructReference)value.get("length", program)).put(this.size());
+		
+		return value;
 	}
 }

@@ -1,6 +1,9 @@
 package rtl;
 
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Expresion {
 	public ExpresionType type;
@@ -12,30 +15,32 @@ public class Expresion {
 	public Expresion[] list;
 	public Statment[] block;
 	public CallableArgs arg;
+	public HashMap<String, Expresion> structArgs = new HashMap<String, Expresion>();
+	public EXPSign sign;
 
 	public Expresion(ExpresionType type){
 		this.type = type;
 	}
 
-	public Object get(Program program, VariabelDatabase db) throws RTLRuntimeException{
+	public Object get(Program program, VariabelDatabase db) throws RTLException{
 		Object l, r;
 		IReference ref;
 		switch(this.type){
 			case STRING:
 				return this.str;
 			case BOOL:
-				return this.str.equals("true");
+			    return this.sign == EXPSign.TRUE;//true
 			case ASSIGN:
 				ref = Reference.toReference(this.left.get(program, db));
 				Object v = this.right.get(program, db);
-				switch(this.str){
-					case "|=":
+				switch(this.sign){
+					case BITWISE_ASSIGN:
 						v = TypeConveter.toInt(ref.toValue()) | TypeConveter.toInt(Reference.toValue(v));
 					break;
-					case "+=":
+					case PLUS_ASSIGN:
 						v = RTLMath.plus(ref.toValue(), Reference.toValue(v));
 					break;
-					case "-=":
+					case MINUS_ASSIGN:
 						v = RTLMath.minus(ref.toValue(), Reference.toValue(v));
 					break;
 				    default:
@@ -62,7 +67,7 @@ public class Expresion {
 			    l = Reference.toValue(this.left.get(program, db));
 			    r = Reference.toValue(this.right.get(program, db));
 			    
-			    if(this.str.equals("!="))
+			    if(this.sign == EXPSign.NOT_EQUAL)
 					return !RTLCompare.equal(l, r);
 				return RTLCompare.equal(l, r);
 			case TYPEOF:
@@ -72,13 +77,21 @@ public class Expresion {
 			    }
 			    return TypeConveter.type(l);
 			case STRUCT:
-				return new StructValue(TypeConveter.toStruct(db.get(this.str).toValue()));
+			    Struct struct = TypeConveter.toStruct(db.get(this.str).toValue());
+			    Object[] args = this.list == null ? new Object[0] : getArgs(program, this.list, db);
+				StructValue sv =  new StructValue(TypeConveter.toStruct(db.get(this.str).toValue()), program, args);
+				if(this.structArgs.size() > 0){
+					for(Map.Entry<String, Expresion> entry : this.structArgs.entrySet()){
+						Reference.toReference(sv.get(entry.getKey(), program)).put(Reference.toValue(entry.getValue().get(program, db)));
+					}
+				}
+				return sv;
 			case STRUCT_GET:
-				return TypeConveter.toStructValue(Reference.toValue(this.left.get(program, db))).get(this.str);
+				return TypeConveter.toStructValue(Reference.toValue(this.left.get(program, db)), program).get(this.str, program);
 			case MATH:
 				l = Reference.toValue(this.left.get(program, db));
 				r = Reference.toValue(this.right.get(program, db));
-				if(this.str.equals("+"))
+				if(this.sign == EXPSign.PLUS)
 					return RTLMath.plus(l, r);
 
 				return RTLMath.minus(l, r);
@@ -93,19 +106,19 @@ public class Expresion {
 					return new ArrayReference(TypeConveter.array(Reference.toValue(this.left.get(program, db))));
 				return new ArrayReference(TypeConveter.array(Reference.toValue(this.left.get(program, db))), TypeConveter.toInt(Reference.toValue(this.right.get(program, db))));
 			case SIZE:
-			    if(this.str.equals("<"))
+			    if(this.sign == EXPSign.CREATER)//<
 					return RTLCompare.RG(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
-				if(this.str.equals("<="))
+				if(this.sign == EXPSign.CREATER_EQUAL)//<=
 					return RTLCompare.RGE(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
-				if(this.str.equals(">="))
+				if(this.sign == EXPSign.LESS_EQUAL)//>=
 					return RTLCompare.LGE(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
 				return RTLCompare.LG(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
 			case SELF_INC:
 			    ref = Reference.toReference(this.left.get(program, db));
 			    Object vsi;
-				if(this.str.equals("++"))
+			    if(this.sign == EXPSign.SELF_INC)//++
 					vsi = RTLMath.plus(ref.toValue(), 1);
-				else
+				else//--
 					vsi = RTLMath.minus(ref.toValue(), 1);
 				ref.put(vsi);
 				return vsi;
@@ -114,21 +127,23 @@ public class Expresion {
 			case NPC:
 				Object npc = Reference.toValue(this.left.get(program, db));
 				if(npc instanceof Integer)
-					return this.str.equals("+") ? +TypeConveter.toInt(npc) : -TypeConveter.toInt(npc);
+					return this.sign == EXPSign.PLUS ? +TypeConveter.toInt(npc) : -TypeConveter.toInt(npc);
 				if(npc instanceof Double)
-					return this.str.equals("+") ? +TypeConveter.toDouble(npc) : -TypeConveter.toDouble(npc);
-				return this.str.equals("+") ? +TypeConveter.toLong(npc) : -TypeConveter.toDouble(npc);
+					return this.sign == EXPSign.PLUS ? +TypeConveter.toDouble(npc) : -TypeConveter.toDouble(npc);
+				return this.sign == EXPSign.PLUS ? +TypeConveter.toLong(npc) : -TypeConveter.toDouble(npc);
 			case NOT:
 				return !TypeConveter.bool(Reference.toValue(this.left.get(program, db)));
 			case AO:
-				if(this.str.equals("&&"))
+			    if(this.sign == EXPSign.AND)//&&
 					return TypeConveter.bool(Reference.toValue(this.left.get(program, db))) && TypeConveter.bool(Reference.toValue(this.right.get(program, db)));
+			    //||
 				return TypeConveter.bool(Reference.toValue(this.left.get(program, db))) || TypeConveter.bool(Reference.toValue(this.right.get(program, db)));
 			case POW:
-				if(this.str.equals("*"))
+			    if(this.sign == EXPSign.GANGE)//*
 					return RTLMath.additiv(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
-				if(this.str.equals("%"))
+				if(this.sign == EXPSign.MOD)//%
 					return RTLMath.modus(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
+				// /
 				return RTLMath.subtiv(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
 			case ASK: 
 				if(TypeConveter.bool(Reference.toValue(this.test.get(program, db))))
@@ -137,7 +152,7 @@ public class Expresion {
 			case BLOCK:
 				VariabelDatabase blockDB = new VariabelDatabase();
 				blockDB.setLast(db);
-				Complication c = program.run(new ProgramInstrucList(this.block), blockDB);
+				Complication c = program.getProgramEvoluator().run(new ProgramInstrucList(this.block), blockDB);
 				if(c.isReturn())
 					return c.value();
 				if(c.isBreak())
@@ -148,9 +163,9 @@ public class Expresion {
 			case FUNCTION:
 				return FunctionUntil.getCallable("<inline>", this.returnType, db, this.arg, this.block);
 			case BITWISE:
-			    if(this.str.equals(">>"))
+			    if(this.sign == EXPSign.SIGN_R)//>>
 					return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) >> TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
-				if(this.str.equals(">>>"))
+				if(this.sign == EXPSign.UNSIGN_R)//>>>
 					return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) >>> TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
 				return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) << TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
 			case BITWISEOR:
@@ -166,7 +181,7 @@ public class Expresion {
 		throw new RTLRuntimeException("Unknown expresion type: "+this.type);
 	}
 
-	private Object[] getArgs(Program program, Expresion[] args, VariabelDatabase db) throws RTLRuntimeException{
+	private Object[] getArgs(Program program, Expresion[] args, VariabelDatabase db) throws RTLException{
 		Object[] arg = new Object[args.length];
 		for(int i=0;i<arg.length;i++)
 			arg[i] = Reference.toValue(args[i].get(program, db));

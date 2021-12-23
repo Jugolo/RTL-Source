@@ -1,7 +1,7 @@
 package rtl;
 
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.RTLException;
 
 public interface ICallable {
-	public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException;
+	public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLException;
 }
