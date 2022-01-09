@@ -29,5 +29,7 @@ public enum ExpresionType {
 	BITWISEOR,
 	BITWISEAND,
 	BITWISENOT,
-	BITWISEXOR
+	BITWISEXOR,
+	NEW,
+	THIS
 }

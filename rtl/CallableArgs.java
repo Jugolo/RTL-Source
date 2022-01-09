@@ -44,7 +44,7 @@ public class CallableArgs {
 		if(i<size){
 			for(;i<size;i++){
 				CallableArgsData data = this.arg[i];
-				if(data.exp == null)
+				if(!data.hasDefault)
 					throw new RTLRuntimeException("When called "+function.name+" it missed some argument");
 				Object buf = this.getDefault(data.exp, program, db);
 				db.get(data.identify).put(buf);
@@ -89,9 +89,10 @@ public class CallableArgs {
 		public final String identify;
 		public final String type;
 		public final Object exp;
+		public final boolean hasDefault;
 
 		public CallableArgsData(String name){
-			this(null, name, null);
+			this(null, name);
 		}
 
 		public CallableArgsData(String name, Object expresion){
@@ -99,13 +100,17 @@ public class CallableArgs {
 		}
 		
 		public CallableArgsData(String type, String identify){
-			this(type, identify, null);
+			this.type = type;
+			this.identify = identify;
+			this.hasDefault = false;
+			this.exp = null;
 		}
 
 		public CallableArgsData(String type, String identify, Object expresion){
 			this.identify = identify;
 			this.type = type;
 			this.exp = expresion;
+			this.hasDefault = true;
 		}
 	}
 }

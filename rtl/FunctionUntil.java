@@ -8,7 +8,7 @@ public class FunctionUntil {
 	public static Function getCallable(String name, String returnType, VariabelDatabase db, CallableArgs arg, Statment[] body) throws RTLException{
 		ProgramInstrucList list = new ProgramInstrucList(body);
 		return new Function(name, returnType, db, arg, new ICallable(){
-			public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLException{
+			public Object onCall(Program program, Object[] arg, Object _this, VariabelDatabase db) throws RTLException{
 				Complication c = program.getProgramEvoluator().run(list, db);
 				if(c.type() == ComplicationType.RETURN)
 					return c.value();

@@ -57,9 +57,20 @@ public class ProgramBuilder {
 					return _break(token);
 				case "continue":
 					return _continue(token);
+				case "class":
+					return _class(token);
 			}
 		}
 		return getExpresion(token);
+	}
+	
+	private static Statment _class(Tokenizer token) throws RTLInterprenterException{
+		Statment statment = new Statment(StatmentType.CLASS, token.current().file(), token.current().line());
+		statment.name = token.next().expect(TokenType.IDENTIFY);
+		token.next().expect(TokenType.PUNCTOR, "{");
+		token.next().expect(TokenType.PUNCTOR, "}");
+		token.next();
+		return statment;
 	}
 
 	private static Statment _continue(Tokenizer token) throws RTLInterprenterException{

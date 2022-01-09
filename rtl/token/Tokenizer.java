@@ -29,7 +29,11 @@ public class Tokenizer {
 		"null",
 		"global",
 		"const",
-		"continue"
+		"continue",
+		"this",
+		"self",
+		"new",
+		"class"
 		};
 	
 	public Tokenizer(Reader reader, String path) throws RTLInterprenterException{
@@ -154,8 +158,6 @@ public class Tokenizer {
 	private TokenBuffer getPunctor(int c) throws RTLInterprenterException{
 		if(c == ';')
 			return this.buffer(TokenType.PUNCTOR, ";");
-		if(c == ':')
-			return this.buffer(TokenType.PUNCTOR, ":");
 		if(c == '(')
 			return this.buffer(TokenType.PUNCTOR, "(");
 		if(c == ')')
@@ -184,6 +186,13 @@ public class Tokenizer {
 			return this.buffer(TokenType.PUNCTOR, "~");
 		if(c == '%')
 			return this.buffer(TokenType.PUNCTOR, "%");
+		if(c == ':'){
+			if(this.reader.peek() == ':'){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "::");
+			}
+			return this.buffer(TokenType.PUNCTOR, ":");
+		}
 		if(c == '&'){
 			if(this.reader.peek() == '&'){
 				this.reader.read();
@@ -260,6 +269,10 @@ public class Tokenizer {
 			if(this.reader.peek() == '='){
 				this.reader.read();
 				return this.buffer(TokenType.PUNCTOR, "-=");
+			}
+			if(this.reader.peek() == '>'){
+				this.reader.read();
+				return this.buffer(TokenType.PUNCTOR, "->");
 			}
 			return this.buffer(TokenType.PUNCTOR, "-");
 		}

@@ -5,6 +5,17 @@ import java.util.HashMap;
 public class VariabelDatabase {
 	private VariabelDatabase last = null;
 	private HashMap<String, VariabelContainer> db = new HashMap<String, VariabelContainer>();
+	private Object _this;
+	
+	public VariabelDatabase(){}
+	
+	public VariabelDatabase(Object _this){
+		this._this = _this;
+	}
+	
+	public Object getThis(){
+		return this._this;
+	}
 
 	public boolean containes(String name){
 		return this.db.containsKey(name);

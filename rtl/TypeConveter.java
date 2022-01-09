@@ -27,7 +27,11 @@ public class TypeConveter {
 			return RTLType.ARRAY;
 		if(obj instanceof Byte)
 			return RTLType.BYTE;
-		//return obj.getClass().getName();
+		if(obj instanceof IClass)
+			return RTLType.CLASS;
+		if(obj instanceof IObject)
+			return RTLType.OBJECT;
+		//System.out.println(obj.getClass().getName());
 		return RTLType.UNDEFINED;
 	}
 
@@ -152,6 +156,13 @@ public class TypeConveter {
 			return (Function)obj;
 			
 		wrongType(obj, "function");
+		return null;
+	}
+	
+	public static IClass toClass(Object obj) throws RTLRuntimeException{
+		if(obj instanceof IClass)
+			return (IClass)obj;
+		wrongType(obj, "class");
 		return null;
 	}
 	

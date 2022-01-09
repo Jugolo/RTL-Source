@@ -22,9 +22,13 @@ public class Function {
 	}
 
 	public Object call(Program program, Object[] arg) throws RTLException{
-		VariabelDatabase db = new VariabelDatabase();
+		return this.call(program, arg, null);
+	}
+	
+	public Object call(Program program, Object[] arg, Object _this) throws RTLException{
+		VariabelDatabase db = new VariabelDatabase(_this);
  		db.setLast(this.proto);
-		Object result = this.callable.onCall(program, this.arg.set(this, arg, db, program), db);
+		Object result = this.callable.onCall(program, this.arg.set(this, arg, db, program), _this, db);
 		if(this.returnType != null){
 			RTLType type = TypeConveter.type(result);
 			if(type == RTLType.NULL || type == RTLType.STRUCTVALUE && ((StructValue)result).getName().equals(this.returnType))

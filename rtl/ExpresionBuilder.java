@@ -327,11 +327,28 @@ public class ExpresionBuilder {
 		if(buffer.is(TokenType.KEYWORD, "null")){
 			return new Expresion(ExpresionType.NULL);
 		}
+		
+		if(buffer.is(TokenType.KEYWORD, "new")){
+			return getNew(token);
+		}
 
 		if(buffer.is(TokenType.KEYWORD, "function"))
 			return handleAfterIdentify(func(token), token);
+			
+		if(buffer.is(TokenType.KEYWORD, "this"))
+			return handleAfterIdentify(new Expresion(ExpresionType.THIS), token);
 		
 		throw new RTLInterprenterException("Unknown token detected "+buffer.type()+"("+buffer.context()+")");
+	}
+	
+	private static Expresion getNew(Tokenizer token) throws RTLInterprenterException{
+		token.current().expect(TokenType.IDENTIFY);
+		Expresion exp = new Expresion(ExpresionType.NEW);
+		exp.str = token.current().context();
+		token.next().expect(TokenType.PUNCTOR, "(");
+		token.next();
+		exp.list = getArgsCall(token);
+		return exp;
 	}
 	
 	private static void getStructItem(Expresion exp, Tokenizer token) throws RTLInterprenterException{

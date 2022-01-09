@@ -43,13 +43,20 @@ public class RTLMath{
 	public static Object subtiv(Object l, Object r) throws RTLRuntimeException{
 		if(!TypeConveter.isNumber(l) || !TypeConveter.isNumber(r))
 			throw new RTLRuntimeException("Cant use the sign / on non numric value");
-		
-		if(l instanceof Integer)
+		if(l instanceof Integer){
+			if(TypeConveter.toInt(r) == 0)
+				throw new RTLRuntimeException("Cant use the sign / on zero");
 			return (int)l / TypeConveter.toInt(r);
+		}
 			
-		if(l instanceof Long)
+		if(l instanceof Long){
+		    if(TypeConveter.toLong(r) == 0L)
+				throw new RTLRuntimeException("Cant use the sign / on zero");
 			return (long)l / TypeConveter.toLong(r);
+		}
 		
+		if(TypeConveter.toDouble(r) == 0.0)
+			throw new RTLRuntimeException("Cant use the sign / on zero");
 		return (double)l / TypeConveter.toDouble(r);
 	}
 	

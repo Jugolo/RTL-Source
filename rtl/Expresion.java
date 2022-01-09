@@ -53,8 +53,11 @@ public class Expresion {
 			case IDENTIFY:
 				return db.get(this.str);
 			case CALL:
-				Object obj = Reference.toValue(this.left.get(program, db));
-				return TypeConveter.toFunction(obj).call(program, this.getArgs(program, this.list, db));
+			    Object _this = null;
+			    l = this.left.get(program, db);
+			    if(l instanceof StructReference)
+					_this = Reference.toReference(l).getBase();
+				return TypeConveter.toFunction(Reference.toValue(l)).call(program, this.getArgs(program, this.list, db), _this);
 			case NUMBER:
 			    try{
 					if(this.str.indexOf(".") == -1)
@@ -73,9 +76,9 @@ public class Expresion {
 			case TYPEOF:
 			    l = this.left.get(program, db);
 			    if(l instanceof IReference){
-			    	return ((IReference)l).hasBase() ? TypeConveter.type(Reference.toValue(l)) : "undefined";
+			    	return ((IReference)l).hasBase() ? TypeConveter.type(Reference.toValue(l)).toString() : "undefined";
 			    }
-			    return TypeConveter.type(l);
+			    return TypeConveter.type(l).toString();
 			case STRUCT:
 			    Struct struct = TypeConveter.toStruct(db.get(this.str).toValue());
 			    Object[] args = this.list == null ? new Object[0] : getArgs(program, this.list, db);
@@ -176,6 +179,13 @@ public class Expresion {
 				return ~TypeConveter.toInt(Reference.toValue(this.left.get(program, db)));
 			case BITWISEXOR:
 				return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) ^ TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
+			case NEW:
+				return TypeConveter.toClass(Reference.toValue(db.get(this.str))).newInstance(this.getArgs(program, this.list, db));
+			case THIS:
+			    l = db.getThis();
+			    if(l == null)
+					throw new RTLRuntimeException("Can`t use the keyword 'this'");
+				return l;
 		}
 
 		throw new RTLRuntimeException("Unknown expresion type: "+this.type);

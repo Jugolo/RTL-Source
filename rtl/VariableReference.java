@@ -44,4 +44,9 @@ public class VariableReference implements IReference{
 	public boolean hasBase(){
 		return this.container.containes(this.name);
 	}
+	
+	public Object getBase(){
+		//becuse this is a reference to a non value in the script context wee return null...
+		return null;
+	}
 }

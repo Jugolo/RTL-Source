@@ -1,17 +1,16 @@
 --New--
-Append the time function 'date' Some take argument and convete it to TIME struct
-Program.isFinish() tells if the script is done and ready to be closed.
-Progran.close() close the program and if it still running stop it.
-Array can now be converted to StructValue. It containe a field 'length' there tell how many item there are.
-The script now support native java as plugin.
-Indentify can now containe $ in there name
-Struct can now assign value. struct TEST{one = 1, two = 2} and so on
-When create new StructValue you can chose to give it arguemtns like function call test = struct TEST(1, 2, 3);
-When define a struct you can chose to make a constructor '$construct'. When you try to create a struct value it will try to get a function out of this value and call it. 
-String can now bew converted to StructValue. It containe a field 'length' there tell how many char there are in the string
-When create a new StructValue you can  now put value in each field. You onlye need to do: struct STRUCTS{one=two, tree=four};
-When no file is given in the console. it will look after index.rts
+Begin on class and object.
+IPrint println and print now offer a option to throw RTLRuntimeException
+toLong. Type conveter plugin now offer a option to try convert string to long value
+you can now use 'this' when you call a function in a struct. Please note it is only allowed when you call it direct from a struct. 
+Struct can now be applied a field $get. When you now try to get a field there not exists it will convert $get to function and call it widht the arguement 'string key'
+Struct can now be applied a field $set. When you now try too set a field there not exists it will convert $set to function and call it width the arguemnt 'string key, value'
+Struct _struct now containe two new function. set(string key, value) and get(string key) to get value from hashmap widthout know the key
+Support the keyword class. Please note you can now create class but it cant containe anything. 
+--Change--
+IPrint now have changed it argument 'Object data' to 'Object[] data' to better fit it given arguments
+Plugin 'rtl.string' substr now have default sencond param as -1. If it is -1 it will only return the substring from the start point and to the end
 --bugfix--
-include file stream not working properly.
-dir allow acces outsite the base dir. 
-structfield not access outsite its packge. 
+Typeof will not result in string but a native value
+Before if you say null as default argument it will raise a error if it not filled
+If you use the sign / on zero value it will before throw a native error. Now it is RTLRuntimeException

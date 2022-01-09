@@ -4,9 +4,11 @@ import rtl.exception.RTLRuntimeException;
 
 public class StructReference implements IReference{
 	private StructItem item;
+	private StructValue value;
 
-	public StructReference(StructItem item){
+	public StructReference(StructItem item, StructValue value){
 		this.item = item;
+		this.value = value;
 	}
 
 	public boolean hasBase(){
@@ -22,5 +24,9 @@ public class StructReference implements IReference{
 			throw new RTLRuntimeException("Cant append on a const field in a struct");
 		this.item.value = context;
 		this.item.hasSet = true;
+	}
+	
+	public Object getBase(){
+		return this.value;
 	}
 }

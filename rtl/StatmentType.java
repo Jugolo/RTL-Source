@@ -17,4 +17,5 @@ public enum StatmentType {
 	ELSE,
 	BREAK,
 	CONTINUE,
+	CLASS
 }

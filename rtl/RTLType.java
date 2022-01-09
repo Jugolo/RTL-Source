@@ -10,7 +10,9 @@ enum RTLType{
 	STRUCTVALUE("structValue"),
 	ARRAY("array"),
 	BYTE("byte"),
-	UNDEFINED("undefined");
+	UNDEFINED("undefined"),
+	CLASS("class"),
+	OBJECT("object");
 	
 	private String name;
 	

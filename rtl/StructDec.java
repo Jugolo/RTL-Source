@@ -10,7 +10,8 @@ public class StructDec extends StructValue{
 		this.current = current;
 	}
 
-	public Object get(String name) throws RTLRuntimeException{
+	public Object get(String name, Program program) throws RTLException{
+		CallableArgs arg;
 		switch(name){
 			case "name":
 				return this.owner.getName();
@@ -28,6 +29,24 @@ public class StructDec extends StructValue{
 					varray.add(vfields[i].value);
 				}
 				return varray;
+			case "set":
+			    arg = new CallableArgs();
+			    arg.add("string", "key");
+			    arg.add("value");
+			    return new Function("<structset>", new VariabelDatabase(), arg, new ICallable(){
+					public Object onCall(Program program, Object[] arg, Object _this, VariabelDatabase db) throws RTLException{
+						Reference.toReference(current.get(TypeConveter.string(arg[0]), program)).put(arg[1]);
+						return null;
+					}
+				});
+			case "get":
+			    arg = new CallableArgs();
+			    arg.add("string", "key");
+			    return new Function("<structget>", new VariabelDatabase(), arg, new ICallable(){
+					public Object onCall(Program program, Object[] arg, Object _this, VariabelDatabase db) throws RTLException{
+						return Reference.toReference(current.get(TypeConveter.string(arg[0]), program)).toValue();
+					}
+				});
 			default:
 				throw new RTLRuntimeException("Unknown struct field name '"+name+"' in STRUCT_INFO");
 		}
