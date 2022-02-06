@@ -2,7 +2,7 @@ package rtl;
 
 import rtl.exception.RTLRuntimeException;
 
-class RTLCompare{
+public class RTLCompare{
 	public static boolean LG(Object l, Object r) throws RTLRuntimeException{
 		if(!TypeConveter.isNumber(l) || !TypeConveter.isNumber(r))
 			throw new RTLRuntimeException("Cant use > on non numric value");

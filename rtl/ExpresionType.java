@@ -31,5 +31,6 @@ public enum ExpresionType {
 	BITWISENOT,
 	BITWISEXOR,
 	NEW,
-	THIS
+	THIS,
+	OBJ_POINTER
 }

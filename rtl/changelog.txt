@@ -1,16 +1,25 @@
 --New--
-Begin on class and object.
-IPrint println and print now offer a option to throw RTLRuntimeException
-toLong. Type conveter plugin now offer a option to try convert string to long value
-you can now use 'this' when you call a function in a struct. Please note it is only allowed when you call it direct from a struct. 
-Struct can now be applied a field $get. When you now try to get a field there not exists it will convert $get to function and call it widht the arguement 'string key'
-Struct can now be applied a field $set. When you now try too set a field there not exists it will convert $set to function and call it width the arguemnt 'string key, value'
-Struct _struct now containe two new function. set(string key, value) and get(string key) to get value from hashmap widthout know the key
-Support the keyword class. Please note you can now create class but it cant containe anything. 
+Array when converted to struct now have 'indexOf(find)' function. Now you can finde the index of the value
+String can now be used as array.
+Class can now containe pointers. Method is not supported yet
+Struct $arrayGet is added. Now you can use your struct value as array. Please note a key not need to be int. 
+Struct $arrayAdd is added. Now you can use your struct value as array. Please note this is called when you try to put value in your struct witout key
+Struct $arrayPut is added. Now you can use your struct value as array. Please note this is called when you try to put value in your struct and want to put a key to it
+Struct $arraySize is added. Now you can use your struct value as array. Please not this is called when a system want to figuere out how many element you struct value containe.
 --Change--
-IPrint now have changed it argument 'Object data' to 'Object[] data' to better fit it given arguments
-Plugin 'rtl.string' substr now have default sencond param as -1. If it is -1 it will only return the substring from the start point and to the end
 --bugfix--
-Typeof will not result in string but a native value
-Before if you say null as default argument it will raise a error if it not filled
-If you use the sign / on zero value it will before throw a native error. Now it is RTLRuntimeException
+--Example--
+include "rtl.array";
+
+struct Test{
+  const $arrayGet = function(key){return "yes";},
+  const $arrayAdd = function(value){},
+  const $arrayPut = function(key, value){}
+  const $arraySize = function(){return 100);
+}
+
+test = struct Test;
+var = test["$structGet(key)"];
+test[] = "$structAdd(value)";
+test["one"] = "$structPut(key, value)";
+println count(test); //print 100

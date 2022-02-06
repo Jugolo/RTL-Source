@@ -3,6 +3,7 @@ package rtl;
 import rtl.token.Tokenizer;
 import rtl.token.TokenType;
 import rtl.exception.RTLInterprenterException;
+import java.util.HashMap;
 
 import java.io.File;
 import java.io.FileReader;
@@ -67,10 +68,38 @@ public class ProgramBuilder {
 	private static Statment _class(Tokenizer token) throws RTLInterprenterException{
 		Statment statment = new Statment(StatmentType.CLASS, token.current().file(), token.current().line());
 		statment.name = token.next().expect(TokenType.IDENTIFY);
+		statment.pointer = new HashMap<String, ScriptObjectPointer>();
 		token.next().expect(TokenType.PUNCTOR, "{");
-		token.next().expect(TokenType.PUNCTOR, "}");
+		token.next();
+		while(!token.current().is(TokenType.PUNCTOR, "}")){
+			if(!getClassAccessItem(token, statment))
+				break;
+		}
+		token.current().expect(TokenType.PUNCTOR, "}");
 		token.next();
 		return statment;
+	}
+	
+	private static boolean getClassAccessItem(Tokenizer token, Statment statment) throws RTLInterprenterException{
+		if(token.current().is(TokenType.KEYWORD, new String[]{"public", "private"})){
+			String access = token.current().context();
+			token.next();
+			return getClassItem(token, statment, access);
+		}
+		return getClassItem(token, statment, "public");//when no acces keyword is used it is as standart public
+	}
+	
+	private static boolean getClassItem(Tokenizer token, Statment statment, String access) throws RTLInterprenterException{
+		String name = token.current().expect(TokenType.IDENTIFY);
+		if(statment.pointer.containsKey(name))
+			throw new RTLInterprenterException("The class allready have a pointer width the name: "+name);
+		ScriptObjectPointer pointer = new ScriptObjectPointer();
+		pointer.value = null;
+		pointer.access = access.equals("public") ? ObjectAccess.PUBLIC : ObjectAccess.PRIVATE;
+		statment.pointer.put(name, pointer);
+		token.next().expect(TokenType.PUNCTOR, ";");
+		token.next();
+		return true;
 	}
 
 	private static Statment _continue(Tokenizer token) throws RTLInterprenterException{

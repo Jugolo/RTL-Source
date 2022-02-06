@@ -39,13 +39,13 @@ public class Install {
 
   private static void setFunctions(VariabelDatabase db) throws RTLRuntimeException{
   	pushFunction(db, new Function("os", db, new CallableArgs(), new ICallable(){
-  		public Object onCall(Program program, Object[] arg, VariabelDatabase db){
+  		public Object onCall(Program program, Object[] arg, Object _this, VariabelDatabase db){
   			return System.getProperty("os.name").toLowerCase();
   		}
   	}));
 
   	pushFunction(db, new Function("mainPath", db, new CallableArgs(), new ICallable(){
-  		public Object onCall(Program program, Object[] arg, VariabelDatabase db) throws RTLRuntimeException{
+  		public Object onCall(Program program, Object[] arg, Object _this, VariabelDatabase db) throws RTLRuntimeException{
   			try{
   				return new File(Program.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
   			}catch(URISyntaxException e){

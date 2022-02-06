@@ -1,6 +1,8 @@
 package rtl;
 
 import rtl.exception.*;
+import rtl.array.Array;
+import rtl.array.ArrayReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -85,12 +87,12 @@ public class Expresion {
 				StructValue sv =  new StructValue(TypeConveter.toStruct(db.get(this.str).toValue()), program, args);
 				if(this.structArgs.size() > 0){
 					for(Map.Entry<String, Expresion> entry : this.structArgs.entrySet()){
-						Reference.toReference(sv.get(entry.getKey(), program)).put(Reference.toValue(entry.getValue().get(program, db)));
+						Reference.toReference(sv.get(entry.getKey(), program, db)).put(Reference.toValue(entry.getValue().get(program, db)));
 					}
 				}
 				return sv;
 			case STRUCT_GET:
-				return TypeConveter.toStructValue(Reference.toValue(this.left.get(program, db)), program).get(this.str, program);
+				return TypeConveter.toStructValue(Reference.toValue(this.left.get(program, db)), program, db).get(this.str, program, db);
 			case MATH:
 				l = Reference.toValue(this.left.get(program, db));
 				r = Reference.toValue(this.right.get(program, db));
@@ -101,13 +103,13 @@ public class Expresion {
 			case ARRAY:
 				Array array = new Array();
 				for(int i=0;i<this.list.length;i++){
-					array.add(Reference.toValue(this.list[i].get(program, db)));
+					array.add(program, db, Reference.toValue(this.list[i].get(program, db)));
 				}
 				return array;
 			case ARRAY_GET:
 			    if(this.right == null)
-					return new ArrayReference(TypeConveter.array(Reference.toValue(this.left.get(program, db))));
-				return new ArrayReference(TypeConveter.array(Reference.toValue(this.left.get(program, db))), TypeConveter.toInt(Reference.toValue(this.right.get(program, db))));
+					return new ArrayReference(program, db, TypeConveter.array(Reference.toValue(this.left.get(program, db))));
+				return new ArrayReference(program, db, TypeConveter.array(Reference.toValue(this.left.get(program, db))), Reference.toValue(this.right.get(program, db)));
 			case SIZE:
 			    if(this.sign == EXPSign.CREATER)//<
 					return RTLCompare.RG(Reference.toValue(this.left.get(program, db)), Reference.toValue(this.right.get(program, db)));
@@ -186,6 +188,12 @@ public class Expresion {
 			    if(l == null)
 					throw new RTLRuntimeException("Can`t use the keyword 'this'");
 				return l;
+			case OBJ_POINTER:
+			    IObject obj = TypeConveter.toObject(Reference.toValue(this.left.get(program, db)));
+				return obj.getPointer(
+				    this.left.type == ExpresionType.THIS ? obj : null,
+					this.str
+				);
 		}
 
 		throw new RTLRuntimeException("Unknown expresion type: "+this.type);

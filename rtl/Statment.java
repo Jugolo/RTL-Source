@@ -1,5 +1,7 @@
 package rtl;
 
+import java.util.HashMap;
+
 public class Statment {
 	public StatmentType type;
 	public Expresion expresion;//for expresions
@@ -14,6 +16,7 @@ public class Statment {
 	public boolean isGlobal = false;
 	public boolean isConst = false;
 	public StructField[] struct;
+	public HashMap<String, ScriptObjectPointer> pointer;
 
 	public final int line;
 	public final String file;

@@ -229,7 +229,7 @@ class ProgramRunner{
 				return Complication._continue();
 			case CLASS:
 				ref = db.get(statment.name);
-				ref.put(new ScriptClass(statment.name));
+				ref.put(new ScriptClass(statment.name, statment.pointer));
 				ref.attribute(VariabelAttribute.GLOBAL | VariabelAttribute.NOT_WRITE);
 				this.popPos();
 				return Complication.normal();

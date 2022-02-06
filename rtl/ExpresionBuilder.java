@@ -408,6 +408,18 @@ public class ExpresionBuilder {
 			return exp;
 		}
 		
+		if(token.current().is(TokenType.PUNCTOR, "->")){
+			String objname = token.next().expect(TokenType.IDENTIFY);
+			if(token.next().is(TokenType.PUNCTOR, "(")){
+				throw new RTLInterprenterException("Method is not supported yet");
+			}else{
+				Expresion exp = new Expresion(ExpresionType.OBJ_POINTER);
+				exp.left = before;
+				exp.str = objname;
+				return exp;	
+			}
+		}
+		
 		return before;
 	}
 

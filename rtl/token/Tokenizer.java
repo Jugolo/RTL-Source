@@ -33,7 +33,9 @@ public class Tokenizer {
 		"this",
 		"self",
 		"new",
-		"class"
+		"class",
+		"public",
+		"private"
 		};
 	
 	public Tokenizer(Reader reader, String path) throws RTLInterprenterException{

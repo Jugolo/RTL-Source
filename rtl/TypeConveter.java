@@ -1,6 +1,9 @@
 package rtl;
 
 import rtl.exception.*;
+import rtl.array.IArray;
+import rtl.array.Array;
+import rtl.array.StringArray;
 import rtl.nativestruct.StringStruct;
 
 public class TypeConveter {
@@ -23,7 +26,7 @@ public class TypeConveter {
 			return RTLType.STRUCT;
 		if(obj instanceof StructValue)
 			return RTLType.STRUCTVALUE;
-		if(obj instanceof Array)
+		if(obj instanceof IArray)
 			return RTLType.ARRAY;
 		if(obj instanceof Byte)
 			return RTLType.BYTE;
@@ -31,7 +34,7 @@ public class TypeConveter {
 			return RTLType.CLASS;
 		if(obj instanceof IObject)
 			return RTLType.OBJECT;
-		//System.out.println(obj.getClass().getName());
+		System.out.println(obj.getClass().getName());
 		return RTLType.UNDEFINED;
 	}
 
@@ -39,9 +42,11 @@ public class TypeConveter {
 		return obj instanceof Integer || obj instanceof Double || obj instanceof Long;
 	}
 
-	public static Array array(Object obj) throws RTLRuntimeException{
-		if(obj instanceof Array)
-			return (Array)obj;
+	public static IArray array(Object obj) throws RTLRuntimeException{
+		if(obj instanceof IArray)
+			return (IArray)obj;
+		if(obj instanceof String)
+			return new StringArray((String)obj);
 		wrongType(obj, "array");
 		return null;
 	}
@@ -53,15 +58,15 @@ public class TypeConveter {
 		return null;
 	}
 
-	public static StructValue toStructValue(Object obj, Program program) throws RTLException{
+	public static StructValue toStructValue(Object obj, Program program, VariabelDatabase db) throws RTLException{
 		if(obj instanceof StructValue)
 			return (StructValue)obj;
 		if(obj instanceof Array)
-			return ((Array)obj).toStructValue(program);
+			return ((Array)obj).toStructValue(program, db);
 		if(obj instanceof String){
 			String str = (String)obj;
 			StructValue value = new StructValue(new StringStruct(), program, new Object[0]);
-			((StructReference)value.get("length", program)).put(str.length());
+			((StructReference)value.get("length", program, db)).put(str.length());
 			return value;
 		}
 			
@@ -163,6 +168,14 @@ public class TypeConveter {
 		if(obj instanceof IClass)
 			return (IClass)obj;
 		wrongType(obj, "class");
+		return null;
+	}
+	
+	public static IObject toObject(Object obj) throws RTLRuntimeException{
+		if(obj instanceof IObject)
+			return (IObject)obj;
+			
+		wrongType(obj, "object");
 		return null;
 	}
 	
