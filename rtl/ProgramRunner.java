@@ -7,6 +7,7 @@ import rtl.plugin.IPlugin;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 class ProgramRunner{
 	private int[] line = new int[100];
@@ -229,10 +230,31 @@ class ProgramRunner{
 				return Complication._continue();
 			case CLASS:
 				ref = db.get(statment.name);
-				ref.put(new ScriptClass(statment.name, statment.pointer));
+				Method constructor = null;
+				if(statment.constructor != null)
+					constructor = TypeConveter.toMethod(this.runStep(statment.constructor, db).value());
+				
+				HashMap<String, MethodInfo> methods = new HashMap<String, MethodInfo>();
+				for(int i=0;i<statment.methods.size();i++){
+					if(methods.containsKey(statment.methods.get(i).name))
+						throw new RTLRuntimeException("A class cant have more end one method width the name:" +statment.methods.get(i).name);
+					methods.put(statment.methods.get(i).name, new MethodInfo(statment.methods.get(i).access, TypeConveter.toMethod(this.runStep(statment.methods.get(i), db).value())));
+				}	
+				
+				ref.put(new ScriptClass(statment.name, constructor, statment.pointer, methods));
 				ref.attribute(VariabelAttribute.GLOBAL | VariabelAttribute.NOT_WRITE);
 				this.popPos();
 				return Complication.normal();
+			case METHOD:
+			    ProgramInstrucList list = new ProgramInstrucList(statment.body);
+			    return Complication.normal(new Method(statment.name, db, statment.arg, new IMethodCallable(){
+					public Object call(Program program, VariabelDatabase db, Object[] arg, IObject caller) throws RTLException{
+						Complication c = program.getProgramEvoluator().run(list, db);
+						if(c.type() == ComplicationType.RETURN)
+							return c.value();
+						return null;
+					}
+				}));
 		}
 		throw new RTLRuntimeException("Unknown statment type: "+statment.type);
 	}

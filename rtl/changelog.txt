@@ -1,25 +1,21 @@
 --New--
-Array when converted to struct now have 'indexOf(find)' function. Now you can finde the index of the value
-String can now be used as array.
-Class can now containe pointers. Method is not supported yet
-Struct $arrayGet is added. Now you can use your struct value as array. Please note a key not need to be int. 
-Struct $arrayAdd is added. Now you can use your struct value as array. Please note this is called when you try to put value in your struct witout key
-Struct $arrayPut is added. Now you can use your struct value as array. Please note this is called when you try to put value in your struct and want to put a key to it
-Struct $arraySize is added. Now you can use your struct value as array. Please not this is called when a system want to figuere out how many element you struct value containe.
+Class can now have constructors.
+Class can now have method.
+Function argument type can now be class name.  
 --Change--
 --bugfix--
 --Example--
-include "rtl.array";
+class Test{
+  private str;
+  
+  Test(string str){//can also be public Test(string str){
+    this->str = str;
+  }
 
-struct Test{
-  const $arrayGet = function(key){return "yes";},
-  const $arrayAdd = function(value){},
-  const $arrayPut = function(key, value){}
-  const $arraySize = function(){return 100);
+  public function toString(){
+    return this->str;
+  }
 }
 
-test = struct Test;
-var = test["$structGet(key)"];
-test[] = "$structAdd(value)";
-test["one"] = "$structPut(key, value)";
-println count(test); //print 100
+test = new Test("Hallo world");
+println test->toString();//prints "Hallo world"

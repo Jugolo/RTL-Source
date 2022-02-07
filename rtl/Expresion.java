@@ -27,6 +27,7 @@ public class Expresion {
 	public Object get(Program program, VariabelDatabase db) throws RTLException{
 		Object l, r;
 		IReference ref;
+		IObject obj;
 		switch(this.type){
 			case STRING:
 				return this.str;
@@ -182,18 +183,27 @@ public class Expresion {
 			case BITWISEXOR:
 				return TypeConveter.toInt(Reference.toValue(this.left.get(program, db))) ^ TypeConveter.toInt(Reference.toValue(this.right.get(program, db)));
 			case NEW:
-				return TypeConveter.toClass(Reference.toValue(db.get(this.str))).newInstance(this.getArgs(program, this.list, db));
+				return TypeConveter.toClass(Reference.toValue(db.get(this.str))).newInstance(this.getArgs(program, this.list, db), program);
 			case THIS:
 			    l = db.getThis();
 			    if(l == null)
 					throw new RTLRuntimeException("Can`t use the keyword 'this'");
 				return l;
 			case OBJ_POINTER:
-			    IObject obj = TypeConveter.toObject(Reference.toValue(this.left.get(program, db)));
+			    obj = TypeConveter.toObject(Reference.toValue(this.left.get(program, db)));
 				return obj.getPointer(
 				    this.left.type == ExpresionType.THIS ? obj : null,
 					this.str
 				);
+			case OBJ_METHOD:
+			    obj = TypeConveter.toObject(Reference.toValue(this.left.get(program, db)));
+			    return obj.callMethod(
+			        this.left.type == ExpresionType.THIS ? obj : null,
+			        this.str,
+			        program,
+			        this.getArgs(program, this.list, db)
+			    );
+			  
 		}
 
 		throw new RTLRuntimeException("Unknown expresion type: "+this.type);

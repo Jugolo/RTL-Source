@@ -411,12 +411,17 @@ public class ExpresionBuilder {
 		if(token.current().is(TokenType.PUNCTOR, "->")){
 			String objname = token.next().expect(TokenType.IDENTIFY);
 			if(token.next().is(TokenType.PUNCTOR, "(")){
-				throw new RTLInterprenterException("Method is not supported yet");
+				Expresion exp = new Expresion(ExpresionType.OBJ_METHOD);
+				exp.left = before;
+				exp.str = objname;
+				token.next();
+			    exp.list = getArgsCall(token);
+			    return handleAfterIdentify(exp, token);
 			}else{
 				Expresion exp = new Expresion(ExpresionType.OBJ_POINTER);
 				exp.left = before;
 				exp.str = objname;
-				return exp;	
+				return handleAfterIdentify(exp, token);	
 			}
 		}
 		

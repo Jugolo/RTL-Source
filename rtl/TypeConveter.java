@@ -34,6 +34,8 @@ public class TypeConveter {
 			return RTLType.CLASS;
 		if(obj instanceof IObject)
 			return RTLType.OBJECT;
+		if(obj instanceof Method)
+			return RTLType.METHOD;
 		System.out.println(obj.getClass().getName());
 		return RTLType.UNDEFINED;
 	}
@@ -177,6 +179,13 @@ public class TypeConveter {
 			
 		wrongType(obj, "object");
 		return null;
+	}
+	
+	public static Method toMethod(Object obj) throws RTLRuntimeException{
+		if(obj instanceof Method)
+			return (Method)obj;
+		wrongType(obj, "method");
+	    return null;
 	}
 	
 	private static void wrongType(Object given, String to) throws RTLRuntimeException{

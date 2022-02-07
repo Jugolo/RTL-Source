@@ -1,6 +1,6 @@
 package rtl;
 
-import rtl.exception.RTLRuntimeException;
+import rtl.exception.*;
 
 import java.util.*;
 
@@ -27,6 +27,10 @@ class ScriptObject implements IObject{
 		}
 		
 		return new PointerReference(pointer);
+	}
+	
+	public Object callMethod(IObject caller, String name, Program program, Object[] args) throws RTLException{
+		return this.owner.getMethod(caller, name).call(program, args, this);
 	}
 	
 	private void clonePointer(HashMap<String, ScriptObjectPointer> pointer){

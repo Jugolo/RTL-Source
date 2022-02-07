@@ -90,15 +90,45 @@ public class ProgramBuilder {
 	}
 	
 	private static boolean getClassItem(Tokenizer token, Statment statment, String access) throws RTLInterprenterException{
+		if(token.current().is(TokenType.KEYWORD, "function"))
+			return getMethod(token, statment, access);
 		String name = token.current().expect(TokenType.IDENTIFY);
 		if(statment.pointer.containsKey(name))
 			throw new RTLInterprenterException("The class allready have a pointer width the name: "+name);
+	    token.next();
+		if(name.equals(statment.name) && token.current().is(TokenType.PUNCTOR, "(")){
+			if(!access.equals("public"))
+				throw new RTLInterprenterException("A class constructor must be public");
+			return getConstructor(token, statment);
+		}
 		ScriptObjectPointer pointer = new ScriptObjectPointer();
 		pointer.value = null;
 		pointer.access = access.equals("public") ? ObjectAccess.PUBLIC : ObjectAccess.PRIVATE;
 		statment.pointer.put(name, pointer);
-		token.next().expect(TokenType.PUNCTOR, ";");
+		token.current().expect(TokenType.PUNCTOR, ";");
 		token.next();
+		return true;
+	}
+	
+	private static boolean getMethod(Tokenizer token, Statment statment, String access) throws RTLInterprenterException{
+		Statment method = new Statment(StatmentType.METHOD, token.current().file(), token.current().line());
+		method.name = token.next().expect(TokenType.IDENTIFY);
+		token.next();
+		method.arg = FunctionUntil.getArg(token);
+		token.next().expect(TokenType.PUNCTOR, "{");
+		method.body = getBody(token);
+		method.access = access;
+		statment.methods.add(method);
+		return true;
+	}
+
+    private static boolean getConstructor(Tokenizer token, Statment statment) throws RTLInterprenterException{
+		Statment method = new Statment(StatmentType.METHOD, token.current().file(), token.current().line());
+		method.name = statment.name;
+		method.arg = FunctionUntil.getArg(token);
+		token.next().expect(TokenType.PUNCTOR, "{");
+		method.body = getBody(token);
+		statment.constructor = method;
 		return true;
 	}
 

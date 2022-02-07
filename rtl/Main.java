@@ -5,7 +5,7 @@ import rtl.exception.*;
 import java.io.File;
 
 public class Main {
-	public static String VERSION = "V2.1";
+	public static String VERSION = "V2.3";
 	public static void main(String[] args){
 		if(args.length == 0){
 			args = new String[]{

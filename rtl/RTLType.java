@@ -12,7 +12,8 @@ enum RTLType{
 	BYTE("byte"),
 	UNDEFINED("undefined"),
 	CLASS("class"),
-	OBJECT("object");
+	OBJECT("object"),
+	METHOD("method");
 	
 	private String name;
 	

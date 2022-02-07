@@ -1,6 +1,7 @@
 package rtl;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 
 public class Statment {
 	public StatmentType type;
@@ -17,6 +18,9 @@ public class Statment {
 	public boolean isConst = false;
 	public StructField[] struct;
 	public HashMap<String, ScriptObjectPointer> pointer;
+	public Statment constructor;
+	public String access;
+	public ArrayList<Statment> methods = new ArrayList<Statment>();
 
 	public final int line;
 	public final String file;

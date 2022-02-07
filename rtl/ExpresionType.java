@@ -32,5 +32,6 @@ public enum ExpresionType {
 	BITWISEXOR,
 	NEW,
 	THIS,
-	OBJ_POINTER
+	OBJ_POINTER,
+	OBJ_METHOD
 }
